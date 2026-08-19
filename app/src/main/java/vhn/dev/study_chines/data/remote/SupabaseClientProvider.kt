@@ -1,4 +1,4 @@
-﻿package vhn.dev.study_chines.data.remote
+package vhn.dev.study_chines.data.remote
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
@@ -9,20 +9,28 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import vhn.dev.study_chines.BuildConfig
 
 object SupabaseClientProvider {
 
-    // === BẠN CẬP NHẬT 3 GIÁ TRỊ NÀY ===
-    private const val SUPABASE_URL = "https://qthuomifuzyrzhgcsedx.supabase.co"
-    private const val SUPABASE_ANON_KEY = "eyJhbG...Blwo"
-    // ==================================
+    private val supabaseUrl: String = BuildConfig.SUPABASE_URL.ifBlank {
+        "https://qthuomifuzyrzhgcsedx.supabase.co"
+    }
+
+    private val supabaseAnonKey: String = BuildConfig.SUPABASE_ANON_KEY.ifBlank {
+        ""
+    }
 
     val client: SupabaseClient by lazy {
         createClient()
     }
 
     private fun createClient(): SupabaseClient {
-        return createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY) {
+        require(supabaseAnonKey.isNotBlank()) {
+            "Supabase anon key is missing. Add supabase.anon.key to local.properties or gradle.properties."
+        }
+
+        return createSupabaseClient(supabaseUrl, supabaseAnonKey) {
             install(Postgrest)
         }
     }
@@ -33,8 +41,8 @@ object SupabaseClientProvider {
                 json(Json { ignoreUnknownKeys = true; isLenient = true })
             }
             defaultRequest {
-                headers.append("apikey", SUPABASE_ANON_KEY)
-                headers.append("Authorization", "Bearer $SUPABASE_ANON_KEY")
+                headers.append("apikey", supabaseAnonKey)
+                headers.append("Authorization", "Bearer $supabaseAnonKey")
             }
         }
     }

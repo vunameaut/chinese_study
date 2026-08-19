@@ -16,6 +16,17 @@ android {
         versionCode = 2
         versionName = "2.0"
 
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            "\"${project.findProperty("supabase.url") ?: "https://qthuomifuzyrzhgcsedx.supabase.co"}\""
+        )
+        buildConfigField(
+            "String",
+            "SUPABASE_ANON_KEY",
+            "\"${project.findProperty("supabase.anon.key") ?: ""}\""
+        )
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -40,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.10"
