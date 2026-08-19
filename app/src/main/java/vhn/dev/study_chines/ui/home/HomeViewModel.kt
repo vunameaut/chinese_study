@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import vhn.dev.study_chines.data.local.SessionEntity
+import vhn.dev.study_chines.data.remote.SessionDto
 import vhn.dev.study_chines.data.repository.StudyRepository
 
 data class HomeUiState(
-    val sessions: List<SessionEntity> = emptyList(),
+    val sessions: List<SessionDto> = emptyList(),
     val isLoading: Boolean = true
 )
 

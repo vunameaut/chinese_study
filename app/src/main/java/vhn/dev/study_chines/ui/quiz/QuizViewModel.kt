@@ -12,13 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import vhn.dev.study_chines.data.local.VocabularyEntity
+import vhn.dev.study_chines.data.remote.VocabularyDto
 import vhn.dev.study_chines.data.repository.StudyRepository
 
 enum class QuizStep { PINYIN_VALIDATION, MEANING_VALIDATION, FINISHED }
 
 data class QuizState(
-    val currentVocab: VocabularyEntity? = null,
+    val currentVocab: VocabularyDto? = null,
     val step: QuizStep = QuizStep.PINYIN_VALIDATION,
     val options: List<String> = emptyList(),
     val isAnswerSelected: Boolean = false,
@@ -32,7 +32,7 @@ data class QuizState(
 class QuizViewModel(private val repository: StudyRepository, private val sessionId: Int) : ViewModel() {
     private val _uiState = MutableStateFlow(QuizState())
     val uiState: StateFlow<QuizState> = _uiState.asStateFlow()
-    private val vocabQueue = mutableListOf<VocabularyEntity>()
+    private val vocabQueue = mutableListOf<VocabularyDto>()
     private val bgScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     init { loadVocabulary() }
@@ -54,12 +54,12 @@ class QuizViewModel(private val repository: StudyRepository, private val session
         generatePinyinOptions(next)
     }
 
-    private suspend fun generatePinyinOptions(vocab: VocabularyEntity) {
+    private suspend fun generatePinyinOptions(vocab: VocabularyDto) {
         val d = repository.getRandomPinyinDistractors(vocab.id, sessionId, 3)
         _uiState.value = _uiState.value.copy(options = (d + vocab.pinyin).shuffled(), isLoading = false)
     }
 
-    private suspend fun generateMeaningOptions(vocab: VocabularyEntity) {
+    private suspend fun generateMeaningOptions(vocab: VocabularyDto) {
         val d = repository.getRandomMeaningDistractors(vocab.id, sessionId, 3)
         _uiState.value = _uiState.value.copy(options = (d + vocab.meaning).shuffled(), isAnswerSelected = false)
     }
@@ -89,19 +89,25 @@ class QuizViewModel(private val repository: StudyRepository, private val session
                 }
             } else {
                 // Wrong: requeue to end
-                repository.updateVocabulary(v.copy(lastReviewedAt = System.currentTimeMillis(), reviewStatus = 1))
+                val updated = v.copy(lastReviewedAt = System.currentTimeMillis().toIso8601(), reviewStatus = 1)
+                repository.updateVocabulary(updated)
                 if (vocabQueue.isNotEmpty()) vocabQueue.removeAt(0)
-                vocabQueue.add(v.copy(lastReviewedAt = System.currentTimeMillis(), reviewStatus = 1))
+                vocabQueue.add(updated)
                 _uiState.value = _uiState.value.copy(wrongCount = _uiState.value.wrongCount + 1)
                 setupNextFlashcard()
             }
         }
     }
 
-    private suspend fun markMastered(v: VocabularyEntity) {
-        repository.updateVocabulary(v.copy(lastReviewedAt = System.currentTimeMillis(), reviewStatus = 2))
+    private suspend fun markMastered(v: VocabularyDto) {
+        val updated = v.copy(lastReviewedAt = System.currentTimeMillis().toIso8601(), reviewStatus = 2)
+        repository.updateVocabulary(updated)
         _uiState.value = _uiState.value.copy(correctCount = _uiState.value.correctCount + 1)
     }
 
     override fun onCleared() { super.onCleared(); bgScope.cancel() }
+}
+
+private fun Long.toIso8601(): String {
+    return java.time.Instant.ofEpochMilli(this).toString()
 }

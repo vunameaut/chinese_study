@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import vhn.dev.study_chines.data.local.SessionEntity
+import vhn.dev.study_chines.data.remote.SessionDto
 import vhn.dev.study_chines.ui.theme.MucGiayColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,7 +141,7 @@ private fun EmptyHomeState(onClick: () -> Unit) {
 
 @Composable
 private fun SessionList(
-    sessions: List<SessionEntity>,
+    sessions: List<SessionDto>,
     onDelete: (Int) -> Unit,
     onSelectSession: (Long) -> Unit,
     onAddVocab: (Long) -> Unit
@@ -172,7 +172,7 @@ private fun SessionList(
 }
 
 @Composable
-private fun SessionCard(session: SessionEntity, ordinal: Int, onDelete: () -> Unit, onClick: () -> Unit) {
+private fun SessionCard(session: SessionDto, ordinal: Int, onDelete: () -> Unit, onClick: () -> Unit) {
     val ordinals = listOf('壹','贰','叁','肆','伍','陆','柒','捌','玖','拾')
     Card(
         modifier = Modifier
@@ -188,7 +188,14 @@ private fun SessionCard(session: SessionEntity, ordinal: Int, onDelete: () -> Un
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(session.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                val date = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(session.createdAt))
+                val date = try {
+                    val instant = java.time.Instant.parse(session.createdAt)
+                    java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    }.format(java.util.Date(instant.toEpochMilli()))
+                } catch (e: Exception) {
+                    session.createdAt
+                }
                 Text(date, fontSize = 12.sp, color = MucGiayColors.InkFaint)
             }
             IconButton(onClick = onDelete, Modifier.size(32.dp)) {

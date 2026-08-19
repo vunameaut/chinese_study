@@ -8,7 +8,8 @@ import kotlinx.serialization.Transient
 data class SessionDto(
     val id: Int = 0,
     val title: String,
-    val created_at: String = "",
+    @SerialName("created_at")
+    val createdAt: String = "",
     @Transient
     val word_count: Int = 0
 )

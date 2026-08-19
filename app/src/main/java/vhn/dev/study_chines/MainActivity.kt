@@ -15,7 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import vhn.dev.study_chines.data.local.AppDatabase
+import vhn.dev.study_chines.data.remote.SupabaseDataSource
 import vhn.dev.study_chines.data.repository.StudyRepository
 import vhn.dev.study_chines.ui.entry.EntryScreen
 import vhn.dev.study_chines.ui.entry.EntryViewModel
@@ -28,8 +28,8 @@ import vhn.dev.study_chines.ui.theme.HanziQuizTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val db = AppDatabase.getDatabase(this)
-        val repo = StudyRepository(db.vocabularyDao(), db.sessionDao())
+        val dataSource = SupabaseDataSource()
+        val repo = StudyRepository(dataSource)
 
         setContent {
             HanziQuizTheme {

@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import vhn.dev.study_chines.data.local.VocabularyEntity
+import vhn.dev.study_chines.data.remote.VocabularyDto
 import vhn.dev.study_chines.data.repository.StudyRepository
+import java.time.Instant
 
 class EntryViewModel(private val repository: StudyRepository, private val sessionId: Long) : ViewModel() {
     private val _hanzi = MutableStateFlow("")
@@ -35,10 +36,11 @@ class EntryViewModel(private val repository: StudyRepository, private val sessio
         if (h.isEmpty() || p.isEmpty() || m.isEmpty()) return
 
         viewModelScope.launch {
-            repository.insertVocabulary(VocabularyEntity(
+            repository.insertVocabulary(VocabularyDto(
                 hanzi = h, pinyin = p,
                 wordType = _wordType.value.trim().takeIf { it.isNotEmpty() },
-                meaning = m, sessionId = sessionId.toInt()
+                meaning = m, sessionId = sessionId.toInt(),
+                createdAt = Instant.now().toString()
             ))
             _isSaved.value = true
             _savedCount.value++
