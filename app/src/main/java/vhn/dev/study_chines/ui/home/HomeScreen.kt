@@ -75,6 +75,17 @@ fun HomeScreen(
 
             Spacer(Modifier.height(24.dp))
 
+            // Error message
+            uiState.error?.let {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Text(it, modifier = Modifier.padding(12.dp), color = androidx.compose.material3.MaterialTheme.colorScheme.error)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
             if (uiState.isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MucGiayColors.JadeFill) }
             } else if (uiState.sessions.isEmpty()) {

@@ -34,6 +34,7 @@ fun EntryScreen(
     val meaning by viewModel.meaning.collectAsStateWithLifecycle()
     val isSaved by viewModel.isSaved.collectAsStateWithLifecycle()
     val savedCount by viewModel.savedCount.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -43,6 +44,13 @@ fun EntryScreen(
             snackbarHostState.showSnackbar("Đã lưu $hanzi vào sổ")
             viewModel.resetSaveState()
             focusManager.clearFocus()
+        }
+    }
+
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearError()
         }
     }
 

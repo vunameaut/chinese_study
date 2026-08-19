@@ -9,7 +9,8 @@ import vhn.dev.study_chines.data.repository.StudyRepository
 
 data class HomeUiState(
     val sessions: List<SessionDto> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val error: String? = null
 )
 
 class HomeViewModel(private val repository: StudyRepository) : ViewModel() {
@@ -19,7 +20,7 @@ class HomeViewModel(private val repository: StudyRepository) : ViewModel() {
     init {
         viewModelScope.launch {
             repository.allSessions.collect { sessions ->
-                _uiState.value = _uiState.value.copy(sessions = sessions, isLoading = false)
+                _uiState.value = _uiState.value.copy(sessions = sessions, isLoading = false, error = null)
             }
         }
     }
@@ -27,11 +28,20 @@ class HomeViewModel(private val repository: StudyRepository) : ViewModel() {
     fun createSession(title: String, onResult: (Long) -> Unit) {
         viewModelScope.launch {
             val id = repository.createSession(title)
-            onResult(id)
+            if (id > 0L) {
+                onResult(id)
+                _uiState.value = _uiState.value.copy(error = null)
+            } else {
+                _uiState.value = _uiState.value.copy(error = "Lỗi: Không thể tạo buổi học")
+            }
         }
     }
 
     fun deleteSession(id: Int) {
         viewModelScope.launch { repository.deleteSession(id) }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 }

@@ -23,6 +23,8 @@ class EntryViewModel(private val repository: StudyRepository, private val sessio
     val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
     private val _savedCount = MutableStateFlow(0)
     val savedCount: StateFlow<Int> = _savedCount.asStateFlow()
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     fun updateHanzi(v: String) { _hanzi.value = v }
     fun updatePinyin(v: String) { _pinyin.value = v }
@@ -36,19 +38,26 @@ class EntryViewModel(private val repository: StudyRepository, private val sessio
         if (h.isEmpty() || p.isEmpty() || m.isEmpty()) return
 
         viewModelScope.launch {
-            repository.insertVocabulary(VocabularyDto(
+            val result = repository.insertVocabulary(VocabularyDto(
                 hanzi = h, pinyin = p,
                 wordType = _wordType.value.trim().takeIf { it.isNotEmpty() },
                 meaning = m, sessionId = sessionId.toInt(),
                 createdAt = Instant.now().toString()
             ))
-            _isSaved.value = true
-            _savedCount.value++
-            clearFields()
+            
+            if (result > 0) {
+                _isSaved.value = true
+                _savedCount.value++
+                clearFields()
+                _error.value = null
+            } else {
+                _error.value = "Lỗi: Không thể lưu từ vựng vào Supabase"
+            }
         }
     }
 
     fun resetSaveState() { _isSaved.value = false }
+    fun clearError() { _error.value = null }
 
     private fun clearFields() {
         _hanzi.value = ""; _pinyin.value = ""; _wordType.value = ""; _meaning.value = ""
