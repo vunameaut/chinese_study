@@ -7,69 +7,48 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import vhn.dev.study_chines.data.local.VocabularyEntity
-import vhn.dev.study_chines.data.repository.VocabularyRepository
+import vhn.dev.study_chines.data.repository.StudyRepository
 
-class EntryViewModel(private val repository: VocabularyRepository) : ViewModel() {
-
+class EntryViewModel(private val repository: StudyRepository, private val sessionId: Long) : ViewModel() {
     private val _hanzi = MutableStateFlow("")
     val hanzi: StateFlow<String> = _hanzi.asStateFlow()
-
     private val _pinyin = MutableStateFlow("")
     val pinyin: StateFlow<String> = _pinyin.asStateFlow()
-
     private val _wordType = MutableStateFlow("")
     val wordType: StateFlow<String> = _wordType.asStateFlow()
-
     private val _meaning = MutableStateFlow("")
     val meaning: StateFlow<String> = _meaning.asStateFlow()
-
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
+    private val _savedCount = MutableStateFlow(0)
+    val savedCount: StateFlow<Int> = _savedCount.asStateFlow()
 
-    fun updateHanzi(newHanzi: String) {
-        _hanzi.value = newHanzi
-    }
-
-    fun updatePinyin(newPinyin: String) {
-        _pinyin.value = newPinyin
-    }
-
-    fun updateWordType(newWordType: String) {
-        _wordType.value = newWordType
-    }
-
-    fun updateMeaning(newMeaning: String) {
-        _meaning.value = newMeaning
-    }
+    fun updateHanzi(v: String) { _hanzi.value = v }
+    fun updatePinyin(v: String) { _pinyin.value = v }
+    fun updateWordType(v: String) { _wordType.value = v }
+    fun updateMeaning(v: String) { _meaning.value = v }
 
     fun saveVocabulary() {
-        val currentHanzi = _hanzi.value.trim()
-        val currentPinyin = _pinyin.value.trim()
-        val currentMeaning = _meaning.value.trim()
+        val h = _hanzi.value.trim()
+        val p = _pinyin.value.trim()
+        val m = _meaning.value.trim()
+        if (h.isEmpty() || p.isEmpty() || m.isEmpty()) return
 
-        if (currentHanzi.isNotEmpty() && currentPinyin.isNotEmpty() && currentMeaning.isNotEmpty()) {
-            viewModelScope.launch {
-                val newVocab = VocabularyEntity(
-                    hanzi = currentHanzi,
-                    pinyin = currentPinyin,
-                    wordType = _wordType.value.trim().takeIf { it.isNotEmpty() },
-                    meaning = currentMeaning
-                )
-                repository.insertVocabulary(newVocab)
-                _isSaved.value = true
-                clearFields()
-            }
+        viewModelScope.launch {
+            repository.insertVocabulary(VocabularyEntity(
+                hanzi = h, pinyin = p,
+                wordType = _wordType.value.trim().takeIf { it.isNotEmpty() },
+                meaning = m, sessionId = sessionId.toInt()
+            ))
+            _isSaved.value = true
+            _savedCount.value++
+            clearFields()
         }
     }
 
-    fun resetSaveState() {
-        _isSaved.value = false
-    }
+    fun resetSaveState() { _isSaved.value = false }
 
     private fun clearFields() {
-        _hanzi.value = ""
-        _pinyin.value = ""
-        _wordType.value = ""
-        _meaning.value = ""
+        _hanzi.value = ""; _pinyin.value = ""; _wordType.value = ""; _meaning.value = ""
     }
 }
