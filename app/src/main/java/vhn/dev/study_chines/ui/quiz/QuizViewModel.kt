@@ -1,4 +1,4 @@
-﻿package vhn.dev.study_chines.ui.quiz
+package vhn.dev.study_chines.ui.quiz
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,7 +41,8 @@ class QuizViewModel(private val repository: StudyRepository, private val session
         runBlocking {
             _uiState.value = _uiState.value.copy(isLoading = true)
             val vocabs = repository.getVocabularyForReview(sessionId).first()
-            vocabQueue.clear(); vocabQueue.addAll(vocabs)
+            // Xáo trộn thứ tự từ vựng để câu hỏi ngẫu nhiên, không theo thứ tự trong data
+            vocabQueue.clear(); vocabQueue.addAll(vocabs.shuffled())
             if (vocabQueue.isNotEmpty()) setupNextFlashcard()
             else _uiState.value = _uiState.value.copy(isLoading = false, step = QuizStep.FINISHED)
         }

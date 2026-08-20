@@ -1,4 +1,4 @@
-﻿package vhn.dev.study_chines.ui.quiz
+package vhn.dev.study_chines.ui.quiz
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
@@ -97,11 +97,14 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
 
     LaunchedEffect(uiState.isAnswerSelected) { if (uiState.isAnswerSelected) showContinue = true }
 
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         // Progress bar + counter
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) { /* back icon handled in scaffold */ }
             Spacer(Modifier.width(8.dp))
             Box(Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(9999.dp)).background(MucGiayColors.Hairline)) {
                 val progress = (uiState.remainingVocabs - (if (uiState.step == QuizStep.FINISHED) 0 else 1)).toFloat() / maxOf(1, uiState.remainingVocabs).toFloat()
@@ -112,21 +115,21 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
                 style = MaterialTheme.typography.labelMedium, color = MucGiayColors.InkSoft)
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
 
         // Step chips
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            StepChip(text = "1 Phồn Âm", active = uiState.step == QuizStep.PINYIN_VALIDATION)
-            Text("→", color = MucGiayColors.InkFaint, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 4.dp))
+            StepChip(text = "1 Phiên Âm", active = uiState.step == QuizStep.PINYIN_VALIDATION)
+            Text(",", color = MucGiayColors.InkFaint, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 4.dp))
             StepChip(text = "2 Nghĩa", active = uiState.step == QuizStep.MEANING_VALIDATION)
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Flashcard - signature thẻ giấy
+        // Flashcard - thẻ giấy
         FlashCard(hanzi = vocab.hanzi)
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
 
         // Options instruction
         Text(if (uiState.step == QuizStep.PINYIN_VALIDATION) "Chọn phiên âm đúng:" else "Chọn nghĩa đúng:",
@@ -134,7 +137,7 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
 
         Spacer(Modifier.height(8.dp))
 
-        // Options list (vertical với 甲乙丙丁)
+        // Options list
         val ordinals = listOf('甲','乙','丙','丁')
         uiState.options.forEachIndexed { idx, option ->
             val isSelected = uiState.isAnswerSelected
@@ -157,9 +160,9 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
             )
         }
 
-        // Feedback text + Continue button
+        // Feedback + Continue button
         if (showContinue) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             Text(
                 if (uiState.isCorrect) "Chính xác" else "Chưa đúng",
                 style = MaterialTheme.typography.labelMedium,
@@ -167,13 +170,14 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             OutlinedButton(
                 onClick = { viewModel.nextStep(); showContinue = false },
                 shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.5.dp, MucGiayColors.Hairline),
-                modifier = Modifier.fillMaxWidth().height(44.dp)
-            ) { Text("Tiếp tục", fontWeight = FontWeight.SemiBold, color = MucGiayColors.InkSoft) }
+                modifier = Modifier.fillMaxWidth().height(52.dp)
+            ) { Text("Tiếp tục", fontWeight = FontWeight.SemiBold, color = MucGiayColors.InkSoft, fontSize = 16.sp) }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -183,7 +187,7 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
 private fun FlashCard(hanzi: String) {
     Card(
         modifier = Modifier
-            .widthIn(max = 280.dp)
+            .widthIn(max = 220.dp)
             .aspectRatio(1f),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
@@ -191,7 +195,7 @@ private fun FlashCard(hanzi: String) {
         border = BorderStroke(1.5.dp, MucGiayColors.Hairline)
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            // Grid 朱 background
+            // Grid lines background
             Box(Modifier.matchParentSize()) {
                 Canvas(modifier = Modifier.matchParentSize()) {
                     val gridColor = MucGiayColors.Hairline.copy(alpha = 0.4f)
@@ -203,7 +207,7 @@ private fun FlashCard(hanzi: String) {
             Text(hanzi,
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Black,
-                fontSize = 80.sp,
+                fontSize = 64.sp,
                 color = MucGiayColors.Ink,
                 lineHeight = 1.em
             )
@@ -211,13 +215,13 @@ private fun FlashCard(hanzi: String) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(12.dp)
-                    .size(28.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .padding(10.dp)
+                    .size(26.dp)
+                    .clip(RoundedCornerShape(5.dp))
                     .background(MucGiayColors.SealSon),
                 contentAlignment = Alignment.Center
             ) {
-                Text("学", fontFamily = FontFamily.Serif, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text("学", fontFamily = FontFamily.Serif, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
             }
         }
     }
