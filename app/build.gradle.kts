@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
+}
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -18,12 +27,12 @@ android {
         buildConfigField(
             "String",
             "SUPABASE_URL",
-            "\"${project.findProperty("supabase.url") ?: "https://qthuomifuzyrzhgcsedx.supabase.co"}\""
+            "\"${localProperties.getProperty("supabase.url") ?: project.findProperty("supabase.url") ?: "https://qthuomifuzyrzhgcsedx.supabase.co"}\""
         )
         buildConfigField(
             "String",
             "SUPABASE_ANON_KEY",
-            "\"${project.findProperty("supabase.anon.key") ?: ""}\""
+            "\"${localProperties.getProperty("supabase.anon.key") ?: project.findProperty("supabase.anon.key") ?: ""}\""
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

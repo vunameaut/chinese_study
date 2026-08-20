@@ -18,7 +18,7 @@ object SupabaseClientProvider {
     }
 
     private val supabaseAnonKey: String = BuildConfig.SUPABASE_ANON_KEY.ifBlank {
-        ""
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0aHVvbWlmdXp5cnpoZ2NzZWR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNjEyNTUsImV4cCI6MjEwMjczNzI1NX0.47yUgABy8oaXYsMNYCC5UPqBkQVORJvf5VDa6wnBlwo"
     }
 
     val client: SupabaseClient by lazy {

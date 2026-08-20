@@ -2,93 +2,62 @@ package vhn.dev.study_chines.ui.quiz
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import vhn.dev.study_chines.data.local.SessionDao
-import vhn.dev.study_chines.data.local.SessionEntity
-import vhn.dev.study_chines.data.local.VocabularyDao
-import vhn.dev.study_chines.data.local.VocabularyEntity
+import vhn.dev.study_chines.data.remote.VocabularyDto
 import vhn.dev.study_chines.data.repository.StudyRepository
+import vhn.dev.study_chines.data.remote.SupabaseDataSource
+import kotlinx.coroutines.flow.MutableStateFlow
 
-class FakeVocabularyDao(initial: List<VocabularyEntity> = emptyList()) : VocabularyDao {
-    private val items = initial.toMutableList()
-    var pinyinDistractors: List<String> = emptyList()
-    var meaningDistractors: List<String> = emptyList()
+class FakeStudyRepository : StudyRepository(SupabaseDataSource()) {
+    var vocabs = mutableListOf<VocabularyDto>()
+    var pinyinDistractors = listOf<String>()
+    var meaningDistractors = listOf<String>()
+    val updatedVocabs = mutableListOf<VocabularyDto>()
 
-    override suspend fun insertVocabulary(vocabulary: VocabularyEntity): Long {
-        val nextId = if (items.isEmpty()) 1 else (items.maxOf { it.id } + 1)
-        items += vocabulary.copy(id = if (vocabulary.id == 0) nextId else vocabulary.id)
-        return nextId.toLong()
+    override fun getVocabularyForReview(sessionId: Int): Flow<List<VocabularyDto>> = flow {
+        emit(vocabs.filter { it.sessionId == sessionId && it.reviewStatus != 2 })
     }
 
-    override suspend fun updateVocabulary(vocabulary: VocabularyEntity) {
-        val index = items.indexOfFirst { it.id == vocabulary.id }
-        if (index >= 0) items[index] = vocabulary
+    override suspend fun getRandomPinyinDistractors(excludeId: Int, sessionId: Int, limit: Int): List<String> {
+        return pinyinDistractors.filter { it != vocabs.find { v -> v.id == excludeId }?.pinyin }.take(limit)
     }
 
-    override fun getVocabularyBySession(sessionId: Int): Flow<List<VocabularyEntity>> = flow {
-        emit(items.filter { it.sessionId == sessionId })
+    override suspend fun getRandomMeaningDistractors(excludeId: Int, sessionId: Int, limit: Int): List<String> {
+        return meaningDistractors.filter { it != vocabs.find { v -> v.id == excludeId }?.meaning }.take(limit)
     }
 
-    override fun getVocabularyForReview(sessionId: Int): Flow<List<VocabularyEntity>> = flow {
-        emit(items.filter { it.sessionId == sessionId && it.reviewStatus != 2 })
+    override suspend fun updateVocabulary(vocab: VocabularyDto) {
+        updatedVocabs.add(vocab)
+        val index = vocabs.indexOfFirst { it.id == vocab.id }
+        if (index >= 0) vocabs[index] = vocab
     }
-
-    override suspend fun getRandomPinyinDistractors(
-        excludeId: Int,
-        sessionId: Int,
-        limit: Int
-    ): List<String> = pinyinDistractors.take(limit)
-
-    override suspend fun getRandomMeaningDistractors(
-        excludeId: Int,
-        sessionId: Int,
-        limit: Int
-    ): List<String> = meaningDistractors.take(limit)
-
-    override suspend fun deleteBySession(sessionId: Int) {
-        items.removeAll { it.sessionId == sessionId }
-    }
-}
-
-class FakeSessionDao : SessionDao {
-    override suspend fun insertSession(session: SessionEntity): Long = 1L
-
-    override suspend fun updateSession(session: SessionEntity) = Unit
-
-    override fun getAllSessions(): Flow<List<SessionEntity>> = flow { emit(emptyList()) }
-
-    override suspend fun getSessionById(id: Int): SessionEntity? = null
-
-    override suspend fun deleteSession(id: Int) = Unit
-
-    override suspend fun getMasteredCount(sessionId: Int): Int = 0
-
-    override suspend fun getTotalCount(sessionId: Int): Int = 0
-}
-
-private fun createRepository(
-    initial: List<VocabularyEntity>,
-    pinyin: List<String> = emptyList(),
-    meaning: List<String> = emptyList()
-): StudyRepository {
-    val fakeDao = FakeVocabularyDao(initial)
-    fakeDao.pinyinDistractors = pinyin
-    fakeDao.meaningDistractors = meaning
-    return StudyRepository(fakeDao, FakeSessionDao())
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class QuizViewModelTest {
 
+    private fun createRepository(
+        initial: List<VocabularyDto>,
+        pinyin: List<String> = emptyList(),
+        meaning: List<String> = emptyList()
+    ): FakeStudyRepository {
+        val repo = FakeStudyRepository()
+        repo.vocabs = initial.toMutableList()
+        repo.pinyinDistractors = pinyin
+        repo.meaningDistractors = meaning
+        return repo
+    }
+
     @Test
     fun `initial load picks first vocab and shows pinyin options`() = runTest {
-        val v1 = VocabularyEntity(id = 1, hanzi = "学", pinyin = "xué", wordType = "Danh từ", meaning = "Học", sessionId = 10)
-        val v2 = VocabularyEntity(id = 2, hanzi = "校", pinyin = "xiào", wordType = "Danh từ", meaning = "Trường", sessionId = 10)
+        val v1 = VocabularyDto(id = 1, hanzi = "学", pinyin = "xué", wordType = "Danh từ", meaning = "Học", sessionId = 10)
+        val v2 = VocabularyDto(id = 2, hanzi = "校", pinyin = "xiào", wordType = "Danh từ", meaning = "Trường", sessionId = 10)
 
         val repository = createRepository(
             listOf(v1, v2),
@@ -98,7 +67,7 @@ class QuizViewModelTest {
 
         val state = vm.uiState.value
         assertFalse(state.isLoading)
-        assertEquals(v1, state.currentVocab)
+        assertEquals(v1.id, state.currentVocab?.id)
         assertEquals(QuizStep.PINYIN_VALIDATION, state.step)
         assertTrue(state.options.contains(v1.pinyin))
         assertEquals(2, state.remainingVocabs)
@@ -106,7 +75,7 @@ class QuizViewModelTest {
 
     @Test
     fun `correct pinyin then move to meaning validation`() = runTest {
-        val v1 = VocabularyEntity(id = 1, hanzi = "学", pinyin = "xué", wordType = "Danh từ", meaning = "Học", sessionId = 10)
+        val v1 = VocabularyDto(id = 1, hanzi = "学", pinyin = "xué", wordType = "Danh từ", meaning = "Học", sessionId = 10)
         val repository = createRepository(
             listOf(v1),
             pinyin = listOf("xiào", "shì", "mìng"),
@@ -130,8 +99,8 @@ class QuizViewModelTest {
 
     @Test
     fun `wrong answer pushes vocab to end and advances`() = runTest {
-        val v1 = VocabularyEntity(id = 1, hanzi = "学", pinyin = "xué", wordType = "Danh từ", meaning = "Học", sessionId = 10)
-        val v2 = VocabularyEntity(id = 2, hanzi = "校", pinyin = "xiào", wordType = "Danh từ", meaning = "Trường", sessionId = 10)
+        val v1 = VocabularyDto(id = 1, hanzi = "学", pinyin = "xué", wordType = "Danh từ", meaning = "Học", sessionId = 10)
+        val v2 = VocabularyDto(id = 2, hanzi = "校", pinyin = "xiào", wordType = "Danh từ", meaning = "Trường", sessionId = 10)
         val repository = createRepository(
             listOf(v1, v2),
             pinyin = listOf("xiào", "shì", "mìng")
@@ -146,6 +115,6 @@ class QuizViewModelTest {
 
         vm.nextStep()
         val s2 = vm.uiState.value
-        assertEquals(v2, s2.currentVocab)
+        assertEquals(v2.id, s2.currentVocab?.id)
     }
 }

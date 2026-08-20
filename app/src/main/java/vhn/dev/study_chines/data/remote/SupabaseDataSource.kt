@@ -4,6 +4,7 @@ import android.util.Log
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import vhn.dev.study_chines.data.remote.SupabaseClientProvider.client
@@ -14,18 +15,16 @@ class SupabaseDataSource {
 
     // === Sessions ===
     fun fetchSessionsFlow(): Flow<List<SessionDto>> = flow {
-        try {
-            val sessions = client.postgrest.from("sessions").select().decodeList<SessionDto>()
-            emit(sessions)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching sessions", e)
-            emit(emptyList())
-        }
+        val sessions = client.postgrest.from("sessions").select().decodeList<SessionDto>()
+        emit(sessions)
+    }.catch { e ->
+        Log.e(TAG, "Error fetching sessions", e)
+        emit(emptyList())
     }
 
     suspend fun createSession(title: String): Long? = withContext(Dispatchers.IO) {
         try {
-            val dto = SessionDto(title = title)
+            val dto = SessionDto(title = title, createdAt = java.time.Instant.now().toString())
             Log.d(TAG, "Creating session: $dto")
             val result = client.postgrest.from("sessions").insert(dto).decodeSingle<SessionDto>()
             Log.d(TAG, "Session created with ID: ${result.id}")
@@ -74,27 +73,23 @@ class SupabaseDataSource {
 
     // === Vocabulary ===
     fun getVocabularyBySessionFlow(sessionId: Int): Flow<List<VocabularyDto>> = flow {
-        try {
-            val vocabs = client.postgrest.from("vocabulary")
-                .select { eq("session_id", sessionId) }
-                .decodeList<VocabularyDto>()
-            emit(vocabs)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching vocabulary for session: $sessionId", e)
-            emit(emptyList())
-        }
+        val vocabs = client.postgrest.from("vocabulary")
+            .select { eq("session_id", sessionId) }
+            .decodeList<VocabularyDto>()
+        emit(vocabs)
+    }.catch { e ->
+        Log.e(TAG, "Error fetching vocabulary for session: $sessionId", e)
+        emit(emptyList())
     }
 
     fun getVocabularyForReviewFlow(sessionId: Int): Flow<List<VocabularyDto>> = flow {
-        try {
-            val vocabs = client.postgrest.from("vocabulary")
-                .select { eq("session_id", sessionId) }
-                .decodeList<VocabularyDto>()
-            emit(vocabs.filter { it.reviewStatus != 2 })
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching vocabulary for review in session: $sessionId", e)
-            emit(emptyList())
-        }
+        val vocabs = client.postgrest.from("vocabulary")
+            .select { eq("session_id", sessionId) }
+            .decodeList<VocabularyDto>()
+        emit(vocabs.filter { it.reviewStatus != 2 })
+    }.catch { e ->
+        Log.e(TAG, "Error fetching vocabulary for review in session: $sessionId", e)
+        emit(emptyList())
     }
 
     suspend fun insertVocabulary(vocab: VocabularyDto): Long? = withContext(Dispatchers.IO) {
