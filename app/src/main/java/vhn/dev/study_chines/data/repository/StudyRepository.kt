@@ -32,6 +32,10 @@ open class StudyRepository(private val dataSource: SupabaseDataSource) {
         refreshTrigger.emit(Unit)
     }
 
+    suspend fun refresh() {
+        refreshTrigger.emit(Unit)
+    }
+
     suspend fun getMasteredCount(sessionId: Int): Int = dataSource.getMasteredCount(sessionId)
     suspend fun getTotalCount(sessionId: Int): Int = dataSource.getTotalCount(sessionId)
 

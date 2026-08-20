@@ -15,11 +15,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +42,18 @@ fun HomeScreen(
     var showNewSession by remember { mutableStateOf(false) }
     var sessionTitle by remember { mutableStateOf("") }
     var newHskLevel by remember { mutableIntStateOf(1) }
+
+    val pullToRefreshState = rememberPullToRefreshState()
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            viewModel.refresh()
+        }
+    }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
+    }
 
     // Filter sessions by selected HSK level
     val filteredSessions = uiState.sessions.filter { it.hskLevel == uiState.selectedHsk }
@@ -61,101 +76,115 @@ fun HomeScreen(
             )
         }
     ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(pullToRefreshState.nestedScrollConnection)
         ) {
-            // Header
-            Text("Ứng dụng", fontFamily = FontFamily.Serif, color = MucGiayColors.InkSoft, fontSize = 16.sp)
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text("Hanzi Quiz", style = MaterialTheme.typography.displayLarge, color = MucGiayColors.Ink)
-                Spacer(Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .height(2.5.dp)
-                        .width(60.dp)
-                        .background(MucGiayColors.SealSon)
-                )
-            }
-
-            // Date
-            val days = listOf("Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy")
-            val now = java.util.Calendar.getInstance()
-            Text(
-                "${days[now.get(java.util.Calendar.DAY_OF_WEEK)-1]}, ${now.get(java.util.Calendar.DAY_OF_MONTH)} tháng ${now.get(java.util.Calendar.MONTH)+1}",
-                color = MucGiayColors.InkFaint, fontSize = 13.sp
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            // HSK Level Chips
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                Modifier
+                    .padding(padding)
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxSize()
             ) {
-                viewModel.hskLevels.forEach { level ->
-                    val isSelected = uiState.selectedHsk == level
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (isSelected) MucGiayColors.SealSon else MucGiayColors.PaperDeep,
-                        contentColor = if (isSelected) Color.White else MucGiayColors.InkSoft,
-                        modifier = Modifier.clickable { viewModel.selectHsk(level) }
-                    ) {
-                        Text(
-                            "HSK$level",
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            if (uiState.isLoading) {
-                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MucGiayColors.JadeFill)
-                }
-            } else {
-                // Last session shortcut
-                val lastSession = uiState.sessions.find { it.id.toLong() == uiState.lastSessionId }
-                if (lastSession != null) {
-                    Column {
-                        Text(
-                            "TIẾP TỤC ÔN TẬP",
-                            style = MaterialTheme.typography.labelSmall,
-                            letterSpacing = spToEm(0.06f)
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        SessionCard(
-                            session = lastSession,
-                            ordinal = uiState.sessions.indexOf(lastSession) + 1,
-                            onDelete = { viewModel.deleteSession(lastSession.id) },
-                            onClick = { onNavigateToQuiz(lastSession.id.toLong()) }
-                        )
-                        Spacer(Modifier.height(20.dp))
-                    }
-                }
-
-                if (filteredSessions.isEmpty()) {
-                    EmptyHomeState(onClick = { newHskLevel = uiState.selectedHsk; showNewSession = true })
-                } else {
-                    SessionList(
-                        sessions = filteredSessions,
-                        onDelete = { viewModel.deleteSession(it) },
-                        onSelectSession = onNavigateToQuiz,
-                        onAddVocab = onNavigateToEntry
+                // Header
+                Text("Ứng dụng", fontFamily = FontFamily.Serif, color = MucGiayColors.InkSoft, fontSize = 16.sp)
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("Hanzi Quiz", style = MaterialTheme.typography.displayLarge, color = MucGiayColors.Ink)
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .height(2.5.dp)
+                            .width(60.dp)
+                            .background(MucGiayColors.SealSon)
                     )
                 }
+
+                // Date
+                val days = listOf("Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy")
+                val now = java.util.Calendar.getInstance()
+                Text(
+                    "${days[now.get(java.util.Calendar.DAY_OF_WEEK)-1]}, ${now.get(java.util.Calendar.DAY_OF_MONTH)} tháng ${now.get(java.util.Calendar.MONTH)+1}",
+                    color = MucGiayColors.InkFaint, fontSize = 13.sp
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                // HSK Level Chips
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    viewModel.hskLevels.forEach { level ->
+                        val isSelected = uiState.selectedHsk == level
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isSelected) MucGiayColors.SealSon else MucGiayColors.PaperDeep,
+                            contentColor = if (isSelected) Color.White else MucGiayColors.InkSoft,
+                            modifier = Modifier.clickable { viewModel.selectHsk(level) }
+                        ) {
+                            Text(
+                                "HSK$level",
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                if (uiState.isLoading && !pullToRefreshState.isRefreshing) {
+                    Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MucGiayColors.JadeFill)
+                    }
+                } else {
+                    // Last session shortcut
+                    val lastSession = uiState.sessions.find { it.id.toLong() == uiState.lastSessionId }
+                    if (lastSession != null) {
+                        Column {
+                            Text(
+                                "TIẾP TỤC ÔN TẬP",
+                                style = MaterialTheme.typography.labelSmall,
+                                letterSpacing = spToEm(0.06f)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            SessionCard(
+                                session = lastSession,
+                                ordinal = uiState.sessions.indexOf(lastSession) + 1,
+                                onDelete = { viewModel.deleteSession(lastSession.id) },
+                                onClick = { onNavigateToQuiz(lastSession.id.toLong()) }
+                            )
+                            Spacer(Modifier.height(20.dp))
+                        }
+                    }
+
+                    if (filteredSessions.isEmpty()) {
+                        EmptyHomeState(onClick = { newHskLevel = uiState.selectedHsk; showNewSession = true })
+                    } else {
+                        SessionList(
+                            sessions = filteredSessions,
+                            onDelete = { viewModel.deleteSession(it) },
+                            onSelectSession = onNavigateToQuiz,
+                            onAddVocab = onNavigateToEntry
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
             }
 
-            Spacer(Modifier.height(24.dp))
+            PullToRefreshContainer(
+                state = pullToRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MucGiayColors.Paper,
+                contentColor = MucGiayColors.SealSon
+            )
         }
     }
 

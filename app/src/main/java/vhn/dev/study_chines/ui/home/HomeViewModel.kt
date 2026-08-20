@@ -63,4 +63,11 @@ class HomeViewModel(
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            repository.refresh()
+        }
+    }
 }
