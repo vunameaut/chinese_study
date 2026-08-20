@@ -122,15 +122,37 @@ fun HomeScreen(
                 Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MucGiayColors.JadeFill)
                 }
-            } else if (filteredSessions.isEmpty()) {
-                EmptyHomeState(onClick = { newHskLevel = uiState.selectedHsk; showNewSession = true })
             } else {
-                SessionList(
-                    sessions = filteredSessions,
-                    onDelete = { viewModel.deleteSession(it) },
-                    onSelectSession = onNavigateToQuiz,
-                    onAddVocab = onNavigateToEntry
-                )
+                // Last session shortcut
+                val lastSession = uiState.sessions.find { it.id.toLong() == uiState.lastSessionId }
+                if (lastSession != null) {
+                    Column {
+                        Text(
+                            "TIẾP TỤC ÔN TẬP",
+                            style = MaterialTheme.typography.labelSmall,
+                            letterSpacing = spToEm(0.06f)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        SessionCard(
+                            session = lastSession,
+                            ordinal = uiState.sessions.indexOf(lastSession) + 1,
+                            onDelete = { viewModel.deleteSession(lastSession.id) },
+                            onClick = { onNavigateToQuiz(lastSession.id.toLong()) }
+                        )
+                        Spacer(Modifier.height(20.dp))
+                    }
+                }
+
+                if (filteredSessions.isEmpty()) {
+                    EmptyHomeState(onClick = { newHskLevel = uiState.selectedHsk; showNewSession = true })
+                } else {
+                    SessionList(
+                        sessions = filteredSessions,
+                        onDelete = { viewModel.deleteSession(it) },
+                        onSelectSession = onNavigateToQuiz,
+                        onAddVocab = onNavigateToEntry
+                    )
+                }
             }
 
             Spacer(Modifier.height(24.dp))

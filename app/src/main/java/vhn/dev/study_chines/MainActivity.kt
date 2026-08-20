@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import vhn.dev.study_chines.data.local.UserPreferences
 import vhn.dev.study_chines.data.remote.SupabaseDataSource
 import vhn.dev.study_chines.data.repository.StudyRepository
 import vhn.dev.study_chines.ui.entry.EntryScreen
@@ -30,11 +31,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val dataSource = SupabaseDataSource()
         val repo = StudyRepository(dataSource)
+        val preferences = UserPreferences(this)
 
         setContent {
             HanziQuizTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = vhn.dev.study_chines.ui.theme.MucGiayColors.Paper) {
-                    StudyChineseApp(repo)
+                    StudyChineseApp(repo, preferences)
                 }
             }
         }
@@ -42,16 +44,22 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun StudyChineseApp(repository: StudyRepository) {
+fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
-            val vm: HomeViewModel = viewModel(factory = vmFactory { HomeViewModel(repository) })
+            val vm: HomeViewModel = viewModel(factory = vmFactory { HomeViewModel(repository, preferences) })
             HomeScreen(
                 viewModel = vm,
-                onNavigateToEntry = { id -> navController.navigate("entry/$id") },
-                onNavigateToQuiz = { id -> navController.navigate("quiz/$id") }
+                onNavigateToEntry = { id ->
+                    vm.saveLastSession(id)
+                    navController.navigate("entry/$id")
+                },
+                onNavigateToQuiz = { id ->
+                    vm.saveLastSession(id)
+                    navController.navigate("quiz/$id")
+                }
             )
         }
         composable(
