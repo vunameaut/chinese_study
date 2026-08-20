@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.data.remote
+﻿package vhn.dev.study_chines.data.remote
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -8,6 +8,8 @@ import kotlinx.serialization.Transient
 data class SessionDto(
     val id: Int = 0,
     val title: String,
+    @SerialName("hsk_level")
+    val hskLevel: Int = 1,
     @SerialName("created_at")
     val createdAt: String = "",
     @Transient

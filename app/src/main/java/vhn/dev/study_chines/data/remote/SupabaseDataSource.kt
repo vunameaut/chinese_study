@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.data.remote
+﻿package vhn.dev.study_chines.data.remote
 
 import android.util.Log
 import io.github.jan.supabase.postgrest.postgrest
@@ -22,9 +22,9 @@ class SupabaseDataSource {
         emit(emptyList())
     }
 
-    suspend fun createSession(title: String): Long? = withContext(Dispatchers.IO) {
+    suspend fun createSession(title: String, hskLevel: Int = 1): Long? = withContext(Dispatchers.IO) {
         try {
-            val dto = SessionDto(title = title, createdAt = java.time.Instant.now().toString())
+            val dto = SessionDto(title = title, hskLevel = hskLevel, createdAt = java.time.Instant.now().toString())
             Log.d(TAG, "Creating session: $dto")
             val result = client.postgrest.from("sessions").insert(dto).decodeSingle<SessionDto>()
             Log.d(TAG, "Session created with ID: ${result.id}")

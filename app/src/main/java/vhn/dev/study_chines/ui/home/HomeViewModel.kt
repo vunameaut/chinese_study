@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.ui.home
+﻿package vhn.dev.study_chines.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,7 +10,8 @@ import vhn.dev.study_chines.data.repository.StudyRepository
 data class HomeUiState(
     val sessions: List<SessionDto> = emptyList(),
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val selectedHsk: Int = 1
 )
 
 class HomeViewModel(private val repository: StudyRepository) : ViewModel() {
@@ -25,9 +26,15 @@ class HomeViewModel(private val repository: StudyRepository) : ViewModel() {
         }
     }
 
-    fun createSession(title: String, onResult: (Long) -> Unit) {
+    val hskLevels = listOf(1, 2, 3, 4, 5, 6)
+
+    fun selectHsk(level: Int) {
+        _uiState.value = _uiState.value.copy(selectedHsk = level)
+    }
+
+    fun createSession(title: String, hskLevel: Int, onResult: (Long) -> Unit) {
         viewModelScope.launch {
-            val id = repository.createSession(title)
+            val id = repository.createSession(title, hskLevel)
             if (id > 0L) {
                 onResult(id)
                 _uiState.value = _uiState.value.copy(error = null)

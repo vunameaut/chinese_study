@@ -1,10 +1,8 @@
-package vhn.dev.study_chines.data.repository
+﻿package vhn.dev.study_chines.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import vhn.dev.study_chines.data.model.Session
-import vhn.dev.study_chines.data.model.Vocabulary
 import vhn.dev.study_chines.data.remote.SupabaseDataSource
 import vhn.dev.study_chines.data.remote.SessionDto
 import vhn.dev.study_chines.data.remote.VocabularyDto
@@ -13,7 +11,6 @@ open class StudyRepository(private val dataSource: SupabaseDataSource) {
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
     
     init {
-        // Emit initial value to start flow
         refreshTrigger.tryEmit(Unit)
     }
 
@@ -22,8 +19,8 @@ open class StudyRepository(private val dataSource: SupabaseDataSource) {
         dataSource.fetchSessionsFlow() 
     }
 
-    suspend fun createSession(title: String): Long {
-        val result = dataSource.createSession(title) ?: 0L
+    suspend fun createSession(title: String, hskLevel: Int = 1): Long {
+        val result = dataSource.createSession(title, hskLevel) ?: 0L
         if (result > 0L) {
             refreshTrigger.emit(Unit)
         }
@@ -36,7 +33,6 @@ open class StudyRepository(private val dataSource: SupabaseDataSource) {
     }
 
     suspend fun getMasteredCount(sessionId: Int): Int = dataSource.getMasteredCount(sessionId)
-
     suspend fun getTotalCount(sessionId: Int): Int = dataSource.getTotalCount(sessionId)
 
     // === Vocabulary ===
