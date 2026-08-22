@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -36,7 +37,8 @@ import vhn.dev.study_chines.ui.theme.MucGiayColors
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToEntry: (sessionId: Long) -> Unit,
-    onNavigateToQuiz: (sessionId: Long) -> Unit
+    onNavigateToQuiz: (sessionId: Long) -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showNewSession by remember { mutableStateOf(false) }
@@ -66,6 +68,9 @@ fun HomeScreen(
                 title = { },
                 navigationIcon = { },
                 actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Cài đặt", tint = MucGiayColors.InkSoft)
+                    }
                     IconButton(onClick = { 
                         newHskLevel = uiState.selectedHsk
                         showNewSession = true 

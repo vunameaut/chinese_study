@@ -3,24 +3,18 @@ package vhn.dev.study_chines.ui.quiz
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
+import vhn.dev.study_chines.data.local.UserPreferences
+import java.io.File
 
 /**
  * Quản lý âm thanh hiệu ứng từ file (SoundPool).
- *
- * CÁCH DÙNG:
- * 1. Tạo thư mục: app/src/main/res/raw/
- * 2. Bỏ file âm thanh vào đó, ví dụ: correct.ogg, wrong.ogg, finish.ogg
- *    (định dạng khuyên dùng: .ogg hoặc .wav; .mp3 cũng được từ API 21+)
- * 3. Trong QuizScreen, thay ToneGenerator bằng:
- *      val context = LocalContext.current
- *      val soundManager = remember { SoundManager(context, R.raw.correct, R.raw.wrong, R.raw.finish) }
- *      DisposableEffect(Unit) { onDispose { soundManager.release() } }
- * 4. Phát: soundManager.play(R.raw.correct)
  */
-class SoundManager(context: Context, vararg resIds: Int) {
+class SoundManager(context: Context, private val preferences: UserPreferences) {
     private val appContext = context.applicationContext
     private val soundPool: SoundPool
-    private val soundIds = mutableMapOf<Int, Int>()
+    private val soundIds = mutableMapOf<Int, Int>() // resId -> soundPoolId
+    private val loadedCustomPaths = mutableMapOf<Int, String>() // resId -> lastLoadedPath
+    private val customSoundIds = mutableMapOf<Int, Int>() // resId -> soundPoolId
 
     init {
         val attrs = AudioAttributes.Builder()
@@ -31,12 +25,50 @@ class SoundManager(context: Context, vararg resIds: Int) {
             .setMaxStreams(4)
             .setAudioAttributes(attrs)
             .build()
+    }
+
+    fun loadDefault(vararg resIds: Int) {
         for (resId in resIds) {
-            soundIds[resId] = soundPool.load(appContext, resId, 1)
+            if (!soundIds.containsKey(resId)) {
+                soundIds[resId] = soundPool.load(appContext, resId, 1)
+            }
         }
     }
 
+    private fun loadCustom(path: String): Int? {
+        val file = File(path)
+        if (!file.exists()) return null
+        return soundPool.load(file.absolutePath, 1)
+    }
+
     fun play(resId: Int, volume: Float = 1f) {
+        if (!preferences.isSoundEnabled) return
+
+        val customPath = when (resId) {
+            vhn.dev.study_chines.R.raw.correct -> preferences.customCorrectSoundPath
+            vhn.dev.study_chines.R.raw.wrong -> preferences.customWrongSoundPath
+            vhn.dev.study_chines.R.raw.finish -> preferences.customFinishSoundPath
+            else -> null
+        }
+
+        if (customPath != null) {
+            // If path changed since last load, reload it
+            if (loadedCustomPaths[resId] != customPath) {
+                val newId = loadCustom(customPath)
+                if (newId != null) {
+                    customSoundIds[resId] = newId
+                    loadedCustomPaths[resId] = customPath
+                }
+            }
+            
+            val id = customSoundIds[resId]
+            if (id != null) {
+                soundPool.play(id, volume, volume, 1, 0, 1f)
+                return
+            }
+        }
+
+        // Fallback to default
         val id = soundIds[resId] ?: return
         soundPool.play(id, volume, volume, 1, 0, 1f)
     }

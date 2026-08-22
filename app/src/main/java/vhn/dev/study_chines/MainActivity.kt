@@ -24,6 +24,8 @@ import vhn.dev.study_chines.ui.home.HomeScreen
 import vhn.dev.study_chines.ui.home.HomeViewModel
 import vhn.dev.study_chines.ui.quiz.QuizScreen
 import vhn.dev.study_chines.ui.quiz.QuizViewModel
+import vhn.dev.study_chines.ui.settings.SettingsScreen
+import vhn.dev.study_chines.ui.settings.SettingsViewModel
 import vhn.dev.study_chines.ui.theme.HanziQuizTheme
 
 class MainActivity : ComponentActivity() {
@@ -59,8 +61,15 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
                 onNavigateToQuiz = { id ->
                     vm.saveLastSession(id)
                     navController.navigate("quiz/$id")
+                },
+                onNavigateToSettings = {
+                    navController.navigate("settings")
                 }
             )
+        }
+        composable("settings") {
+            val vm: SettingsViewModel = viewModel(factory = vmFactory { SettingsViewModel(preferences) })
+            SettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
         }
         composable(
             route = "entry/{sessionId}",
@@ -76,7 +85,7 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
         ) { backStackEntry ->
             val sessionId = backStackEntry.arguments?.getInt("sessionId") ?: 0
             val vm: QuizViewModel = viewModel(factory = vmFactory { QuizViewModel(repository, sessionId) })
-            QuizScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
+            QuizScreen(viewModel = vm, preferences = preferences, onNavigateBack = { navController.popBackStack() })
         }
     }
 }

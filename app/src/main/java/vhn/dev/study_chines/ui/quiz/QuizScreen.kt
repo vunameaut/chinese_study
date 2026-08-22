@@ -35,16 +35,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import vhn.dev.study_chines.ui.theme.MucGiayColors
+import vhn.dev.study_chines.data.local.UserPreferences
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuizScreen(viewModel: QuizViewModel, onNavigateBack: () -> Unit) {
+fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigateBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
 
-    // Âm thanh hiệu ứng (không cần file resource, dùng ToneGenerator)
+    // Âm thanh hiệu ứng
     val context = LocalContext.current
-    val sound = remember { SoundManager(context, R.raw.correct, R.raw.wrong, R.raw.finish) }
+    val sound = remember { 
+        SoundManager(context, preferences).apply {
+            loadDefault(R.raw.correct, R.raw.wrong, R.raw.finish)
+        }
+    }
     DisposableEffect(Unit) { onDispose { sound.release() } }
 
 
