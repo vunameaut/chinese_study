@@ -23,6 +23,7 @@ data class QuizState(
     val options: List<String> = emptyList(),
     val isAnswerSelected: Boolean = false,
     val isCorrect: Boolean = false,
+    val selectedAnswer: String? = null,
     val isLoading: Boolean = true,
     val remainingVocabs: Int = 0,
     val correctCount: Int = 0,
@@ -51,7 +52,7 @@ class QuizViewModel(private val repository: StudyRepository, private val session
     private suspend fun setupNextFlashcard() {
         if (vocabQueue.isEmpty()) { _uiState.value = _uiState.value.copy(step = QuizStep.FINISHED, remainingVocabs = 0); return }
         val next = vocabQueue.first()
-        _uiState.value = _uiState.value.copy(currentVocab = next, step = QuizStep.PINYIN_VALIDATION, isAnswerSelected = false, remainingVocabs = vocabQueue.size)
+        _uiState.value = _uiState.value.copy(currentVocab = next, step = QuizStep.PINYIN_VALIDATION, isAnswerSelected = false, selectedAnswer = null, remainingVocabs = vocabQueue.size)
         generatePinyinOptions(next)
     }
 
@@ -62,7 +63,7 @@ class QuizViewModel(private val repository: StudyRepository, private val session
 
     private suspend fun generateMeaningOptions(vocab: VocabularyDto) {
         val d = repository.getRandomMeaningDistractors(vocab.id, sessionId, 3)
-        _uiState.value = _uiState.value.copy(options = (d + vocab.meaning).shuffled(), isAnswerSelected = false)
+        _uiState.value = _uiState.value.copy(options = (d + vocab.meaning).shuffled(), isAnswerSelected = false, selectedAnswer = null)
     }
 
     fun submitAnswer(answer: String) {
@@ -72,7 +73,7 @@ class QuizViewModel(private val repository: StudyRepository, private val session
             QuizStep.MEANING_VALIDATION -> answer == s.currentVocab.meaning
             QuizStep.FINISHED -> false
         }
-        _uiState.value = s.copy(isAnswerSelected = true, isCorrect = correct)
+        _uiState.value = s.copy(isAnswerSelected = true, isCorrect = correct, selectedAnswer = answer)
     }
 
     fun nextStep() {
@@ -81,7 +82,7 @@ class QuizViewModel(private val repository: StudyRepository, private val session
             if (s.isCorrect) {
                 when (s.step) {
                     QuizStep.PINYIN_VALIDATION -> {
-                        _uiState.value = s.copy(step = QuizStep.MEANING_VALIDATION, isAnswerSelected = false); generateMeaningOptions(v)
+                        _uiState.value = s.copy(step = QuizStep.MEANING_VALIDATION, isAnswerSelected = false, selectedAnswer = null); generateMeaningOptions(v)
                     }
                     QuizStep.MEANING_VALIDATION -> {
                         markMastered(v); if (vocabQueue.isNotEmpty()) vocabQueue.removeAt(0); setupNextFlashcard()

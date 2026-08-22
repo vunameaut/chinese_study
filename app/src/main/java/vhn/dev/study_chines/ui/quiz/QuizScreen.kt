@@ -1,6 +1,11 @@
 package vhn.dev.study_chines.ui.quiz
 
+import androidx.compose.ui.platform.LocalContext
+import vhn.dev.study_chines.R
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -12,10 +17,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -23,12 +32,51 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
+import kotlin.random.Random
 import vhn.dev.study_chines.ui.theme.MucGiayColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizScreen(viewModel: QuizViewModel, onNavigateBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val haptic = LocalHapticFeedback.current
+
+    // Âm thanh hiệu ứng (không cần file resource, dùng ToneGenerator)
+    val context = LocalContext.current
+    val sound = remember { SoundManager(context, R.raw.correct, R.raw.wrong, R.raw.finish) }
+    DisposableEffect(Unit) { onDispose { sound.release() } }
+
+
+    // Phát âm thanh + rung khi chọn đáp án
+    LaunchedEffect(uiState.isAnswerSelected, uiState.step) {
+        if (uiState.isAnswerSelected && uiState.step != QuizStep.FINISHED) {
+            if (uiState.isCorrect) {
+                // Arpeggio vui tươi: 3 nốt tăng dần
+                sound.play(R.raw.correct)
+                delay(70)
+                sound.play(R.raw.correct)
+                delay(70)
+                sound.play(R.raw.correct)
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            } else {
+                sound.play(R.raw.wrong)
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        }
+    }
+
+    // Fanfare khi hoàn thành
+    LaunchedEffect(uiState.step) {
+        if (uiState.step == QuizStep.FINISHED && !uiState.isLoading) {
+            sound.play(R.raw.finish)
+            delay(140)
+            sound.play(R.raw.finish)
+            delay(140)
+            sound.play(R.raw.finish)
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
 
     Scaffold(
         containerColor = MucGiayColors.Paper,
@@ -57,27 +105,38 @@ fun QuizScreen(viewModel: QuizViewModel, onNavigateBack: () -> Unit) {
 // ===== FINISH SCREEN =====
 @Composable
 private fun FinishContent(correct: Int, wrong: Int, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.weight(0.15f))
-        Icon(Icons.Default.CheckCircle, contentDescription = null,
-            modifier = Modifier.size(56.dp), tint = MucGiayColors.Jade)
-        Spacer(Modifier.height(12.dp))
-        Text("Hoàn thành", style = MaterialTheme.typography.headlineMedium, color = MucGiayColors.Ink)
-        Text("Hôm nay bạn đã thuộc $correct từ", color = MucGiayColors.InkSoft, fontSize = 14.sp)
+    var appeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
+    val iconScale by animateFloatAsState(
+        targetValue = if (appeared) 1f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "finishIcon"
+    )
 
-        Spacer(Modifier.height(28.dp))
-        Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 32.dp).fillMaxWidth()) {
-            StatColumn(value = "$correct", label = "Thuộc được", color = MucGiayColors.Jade)
-            Spacer(Modifier.width(40.dp))
-            StatColumn(value = "$wrong", label = "Lần sai", color = MucGiayColors.SealSon)
+    Box(Modifier.fillMaxSize()) {
+        ConfettiRain(Modifier.fillMaxSize())
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.weight(0.15f))
+            Icon(Icons.Default.CheckCircle, contentDescription = null,
+                modifier = Modifier.size(56.dp).scale(iconScale), tint = MucGiayColors.Jade)
+            Spacer(Modifier.height(12.dp))
+            Text("Hoàn thành", style = MaterialTheme.typography.headlineMedium, color = MucGiayColors.Ink)
+            Text("Hôm nay bạn đã thuộc $correct từ", color = MucGiayColors.InkSoft, fontSize = 14.sp)
+
+            Spacer(Modifier.height(28.dp))
+            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 32.dp).fillMaxWidth()) {
+                StatColumn(value = "$correct", label = "Thuộc được", color = MucGiayColors.Jade)
+                Spacer(Modifier.width(40.dp))
+                StatColumn(value = "$wrong", label = "Lần sai", color = MucGiayColors.SealSon)
+            }
+
+            Spacer(Modifier.weight(0.2f))
+            Button(
+                onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.SealSon),
+                shape = RoundedCornerShape(10.dp), modifier = Modifier.height(52.dp).fillMaxWidth().padding(horizontal = 32.dp)
+            ) { Text("Về trang chủ", fontWeight = FontWeight.SemiBold) }
+            Spacer(Modifier.weight(0.1f))
         }
-
-        Spacer(Modifier.weight(0.2f))
-        Button(
-            onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.SealSon),
-            shape = RoundedCornerShape(10.dp), modifier = Modifier.height(52.dp).fillMaxWidth().padding(horizontal = 32.dp)
-        ) { Text("Về trang chủ", fontWeight = FontWeight.SemiBold) }
-        Spacer(Modifier.weight(0.1f))
     }
 }
 
@@ -86,6 +145,46 @@ private fun StatColumn(value: String, label: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp), color = color)
         Text(label, style = MaterialTheme.typography.labelSmall, letterSpacing = spToEm(0.02f))
+    }
+}
+
+// ===== CONFETTI =====
+private data class Particle(val x: Float, val y: Float, val speed: Float, val size: Float, val color: Color)
+
+@Composable
+private fun ConfettiRain(modifier: Modifier = Modifier) {
+    val colors = listOf(
+        Color(0xFFE53935), Color(0xFFFFB300), Color(0xFF43A047),
+        Color(0xFF1E88E5), Color(0xFFEC407A), Color(0xFF8E24AA),
+        Color(0xFFFF7043), Color(0xFF00ACC1)
+    )
+    val particles = remember {
+        List(60) {
+            Particle(
+                x = Random.nextFloat(),
+                y = Random.nextFloat(),
+                speed = Random.nextFloat() * 0.6f + 0.3f,
+                size = Random.nextFloat() * 7f + 4f,
+                color = colors[Random.nextInt(colors.size)]
+            )
+        }
+    }
+    val transition = rememberInfiniteTransition(label = "confetti")
+    val progress by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(3200, easing = LinearEasing)),
+        label = "confettiProgress"
+    )
+    Canvas(modifier = modifier) {
+        particles.forEach { p ->
+            val y = ((p.y + progress * p.speed) % 1.05f) * size.height
+            val sway = kotlin.math.sin((progress * 6f + p.x * 10f).toFloat()) * 20f
+            drawCircle(
+                color = p.color,
+                radius = p.size,
+                center = Offset(p.x * size.width + sway, y)
+            )
+        }
     }
 }
 
@@ -126,8 +225,17 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
 
         Spacer(Modifier.height(16.dp))
 
-        // Flashcard - thẻ giấy
-        FlashCard(hanzi = vocab.hanzi)
+        // Flashcard với animation trượt khi chuyển từ
+        AnimatedContent(
+            targetState = vocab.hanzi,
+            transitionSpec = {
+                (slideInHorizontally(animationSpec = tween(340)) { it } +
+                    fadeIn(tween(300)) +
+                    scaleIn(animationSpec = tween(340), initialScale = 0.8f)) togetherWith
+                    (slideOutHorizontally(animationSpec = tween(240)) { -it } + fadeOut(tween(180)))
+            },
+            label = "flashcard"
+        ) { h -> FlashCard(hanzi = h) }
 
         Spacer(Modifier.height(16.dp))
 
@@ -154,30 +262,37 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
                 state = when {
                     !isSelected -> OptionState.Normal
                     isCorrectAnswer -> OptionState.Correct
-                    else -> OptionState.Wrong
+                    option == uiState.selectedAnswer -> OptionState.Wrong
+                    else -> OptionState.Normal
                 },
                 onClick = { viewModel.submitAnswer(option) }
             )
         }
 
         // Feedback + Continue button
-        if (showContinue) {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                if (uiState.isCorrect) "Chính xác" else "Chưa đúng",
-                style = MaterialTheme.typography.labelMedium,
-                color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealDeep,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = { viewModel.nextStep(); showContinue = false },
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.5.dp, MucGiayColors.Hairline),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) { Text("Tiếp tục", fontWeight = FontWeight.SemiBold, color = MucGiayColors.InkSoft, fontSize = 16.sp) }
-            Spacer(Modifier.height(16.dp))
+        AnimatedVisibility(
+            visible = showContinue,
+            enter = fadeIn(tween(200)) + expandVertically(tween(250)),
+            exit = fadeOut(tween(120))
+        ) {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    if (uiState.isCorrect) "Chính xác" else "Chưa đúng",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealDeep,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { viewModel.nextStep(); showContinue = false },
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.5.dp, MucGiayColors.Hairline),
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) { Text("Tiếp tục", fontWeight = FontWeight.SemiBold, color = MucGiayColors.InkSoft, fontSize = 16.sp) }
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
 }
@@ -195,7 +310,6 @@ private fun FlashCard(hanzi: String) {
         border = BorderStroke(1.5.dp, MucGiayColors.Hairline)
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            // Grid lines background
             Box(Modifier.matchParentSize()) {
                 Canvas(modifier = Modifier.matchParentSize()) {
                     val gridColor = MucGiayColors.Hairline.copy(alpha = 0.4f)
@@ -203,7 +317,6 @@ private fun FlashCard(hanzi: String) {
                     drawLine(gridColor, Offset(0f, size.height * 0.5f), Offset(size.width, size.height * 0.5f), strokeWidth = 1.dp.toPx())
                 }
             }
-            // Hanzi character
             Text(hanzi,
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Black,
@@ -211,7 +324,6 @@ private fun FlashCard(hanzi: String) {
                 color = MucGiayColors.Ink,
                 lineHeight = 1.em
             )
-            // Seal stamp
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -240,7 +352,7 @@ private fun StepChip(text: String, active: Boolean) {
     }
 }
 
-// ===== OPTION ROW =====
+// ===== OPTION ROW (có animation: đúng thì nảy, sai thì rung) =====
 enum class OptionState { Normal, Correct, Wrong }
 
 @Composable
@@ -260,12 +372,40 @@ private fun OptionRow(ordinal: Char, text: String, enabled: Boolean, state: Opti
         OptionState.Wrong -> MucGiayColors.SealDeep
         else -> MucGiayColors.InkFaint
     }
+    val borderColor = when (state) {
+        OptionState.Correct -> MucGiayColors.Jade
+        OptionState.Wrong -> MucGiayColors.SealDeep
+        else -> Color.Transparent
+    }
+
+    // Scale nảy khi đúng (bouncy hơn)
+    val scale by animateFloatAsState(
+        targetValue = if (state == OptionState.Correct) 1.06f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "optionScale"
+    )
+    // Rung khi sai
+    val shake = remember { Animatable(0f) }
+    LaunchedEffect(state) {
+        if (state == OptionState.Wrong) {
+            val amp = 12f
+            for (i in 1..3) {
+                shake.animateTo(amp, tween(45))
+                shake.animateTo(-amp, tween(45))
+            }
+            shake.animateTo(0f, tween(45))
+        }
+    }
 
     Surface(
         onClick = { if (enabled) onClick() },
         shape = RectangleShape,
         color = bgColor,
-        modifier = Modifier.fillMaxWidth()
+        border = if (state == OptionState.Normal) null else BorderStroke(2.dp, borderColor),
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .graphicsLayer { translationX = shake.value }
     ) {
         Row(
             modifier = Modifier
@@ -275,7 +415,12 @@ private fun OptionRow(ordinal: Char, text: String, enabled: Boolean, state: Opti
         ) {
             Text(ordinal.toString(), fontFamily = FontFamily.Serif, fontSize = 15.sp, color = ordinalColor)
             Spacer(Modifier.width(12.dp))
-            Text(text, fontSize = 14.sp, color = textColor, fontWeight = if (state == OptionState.Correct) FontWeight.SemiBold else FontWeight.Normal)
+            Text(text, fontSize = 14.sp, color = textColor, fontWeight = if (state == OptionState.Correct) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.weight(1f))
+            if (state == OptionState.Correct) {
+                Icon(Icons.Default.Check, contentDescription = null, tint = MucGiayColors.Jade, modifier = Modifier.size(20.dp))
+            } else if (state == OptionState.Wrong) {
+                Icon(Icons.Default.Close, contentDescription = null, tint = MucGiayColors.SealDeep, modifier = Modifier.size(20.dp))
+            }
         }
     }
     HorizontalDivider(color = MucGiayColors.Hairline, thickness = 0.5.dp)
