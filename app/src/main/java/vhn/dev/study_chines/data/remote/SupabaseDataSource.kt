@@ -1,4 +1,4 @@
-﻿package vhn.dev.study_chines.data.remote
+package vhn.dev.study_chines.data.remote
 
 import android.util.Log
 import io.github.jan.supabase.postgrest.postgrest
@@ -86,7 +86,8 @@ class SupabaseDataSource {
         val vocabs = client.postgrest.from("vocabulary")
             .select { eq("session_id", sessionId) }
             .decodeList<VocabularyDto>()
-        emit(vocabs.filter { it.reviewStatus != 2 })
+        val review = vocabs.filter { it.reviewStatus != 2 }
+        emit(if (review.isEmpty()) vocabs else review)
     }.catch { e ->
         Log.e(TAG, "Error fetching vocabulary for review in session: $sessionId", e)
         emit(emptyList())
