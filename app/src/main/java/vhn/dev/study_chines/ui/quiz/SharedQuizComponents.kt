@@ -72,7 +72,12 @@ fun FlashCard(
 
 // ===== FINISH SCREEN =====
 @Composable
-fun FinishContent(correct: Int, wrong: Int, onBack: () -> Unit) {
+fun FinishContent(
+    correct: Int,
+    wrong: Int,
+    isRepractice: Boolean = false,
+    onBack: () -> Unit
+) {
     var appeared by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { appeared = true }
     val iconScale by animateFloatAsState(
@@ -88,8 +93,16 @@ fun FinishContent(correct: Int, wrong: Int, onBack: () -> Unit) {
             Icon(Icons.Default.CheckCircle, contentDescription = null,
                 modifier = Modifier.size(56.dp).scale(iconScale), tint = MucGiayColors.Jade)
             Spacer(Modifier.height(12.dp))
-            Text("Hoàn thành", style = MaterialTheme.typography.headlineMedium, color = MucGiayColors.Ink)
-            Text("Hôm nay bạn đã thuộc $correct từ", color = MucGiayColors.InkSoft, fontSize = 14.sp)
+            Text(
+                text = if (isRepractice) "Hoàn thành ôn lại" else "Hoàn thành",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MucGiayColors.Ink
+            )
+            Text(
+                text = if (isRepractice) "Lượt ôn lại không tính vào thống kê tiến độ" else "Hôm nay bạn đã thuộc $correct từ",
+                color = MucGiayColors.InkSoft,
+                fontSize = 14.sp
+            )
 
             Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 32.dp).fillMaxWidth()) {

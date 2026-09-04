@@ -123,7 +123,12 @@ fun WritePinyinScreen(
         ) {
             when {
                 uiState.isLoading -> CircularProgressIndicator(color = MucGiayColors.JadeFill)
-                uiState.isFinished -> FinishContent(correct = uiState.correctCount, wrong = uiState.wrongCount, onBack = onNavigateBack)
+                uiState.isFinished -> FinishContent(
+                    correct = uiState.correctCount,
+                    wrong = uiState.wrongCount,
+                    isRepractice = uiState.isRepractice,
+                    onBack = onNavigateBack
+                )
                 else -> WritePinyinContent(uiState = uiState, viewModel = viewModel)
             }
         }

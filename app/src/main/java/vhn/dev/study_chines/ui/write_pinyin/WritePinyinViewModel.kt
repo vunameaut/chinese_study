@@ -18,7 +18,8 @@ data class WritePinyinState(
     val isFinished: Boolean = false,
     val remainingVocabs: Int = 0,
     val correctCount: Int = 0,
-    val wrongCount: Int = 0
+    val wrongCount: Int = 0,
+    val isRepractice: Boolean = false
 )
 
 class WritePinyinViewModel(
@@ -36,6 +37,8 @@ class WritePinyinViewModel(
         runBlocking {
             _uiState.value = _uiState.value.copy(isLoading = true)
             val vocabs = repository.getVocabularyForReview(sessionId).first()
+            val isRepractice = vocabs.isNotEmpty() && vocabs.all { it.reviewStatus == 2 }
+            _uiState.value = _uiState.value.copy(isRepractice = isRepractice)
             vocabQueue.clear(); vocabQueue.addAll(vocabs.shuffled())
             if (vocabQueue.isNotEmpty()) setupNextWord()
             else _uiState.value = _uiState.value.copy(isLoading = false, isFinished = true)
@@ -76,26 +79,31 @@ class WritePinyinViewModel(
         val s = _uiState.value
         if (!s.isChecked) return
         val v = s.currentVocab ?: return
+        val isRepractice = s.isRepractice
 
         runBlocking {
             if (s.isCorrect) {
-                // Mastered
-                val updated = v.copy(
-                    lastReviewedAt = System.currentTimeMillis().toIso8601(),
-                    reviewStatus = 2
-                )
-                repository.updateVocabulary(updated)
+                // Mastered: Chỉ cập nhật database nếu không phải ôn lại và từ chưa thuộc
+                if (!isRepractice && v.reviewStatus != 2) {
+                    val updated = v.copy(
+                        lastReviewedAt = System.currentTimeMillis().toIso8601(),
+                        reviewStatus = 2
+                    )
+                    repository.updateVocabulary(updated)
+                }
                 _uiState.value = _uiState.value.copy(correctCount = _uiState.value.correctCount + 1)
                 if (vocabQueue.isNotEmpty()) vocabQueue.removeAt(0)
             } else {
-                // Requeue
-                val updated = v.copy(
-                    lastReviewedAt = System.currentTimeMillis().toIso8601(),
-                    reviewStatus = 1
-                )
-                repository.updateVocabulary(updated)
+                // Requeue: Chỉ cập nhật database nếu không phải ôn lại và từ chưa thuộc
+                if (!isRepractice && v.reviewStatus != 2) {
+                    val updated = v.copy(
+                        lastReviewedAt = System.currentTimeMillis().toIso8601(),
+                        reviewStatus = 1
+                    )
+                    repository.updateVocabulary(updated)
+                }
                 if (vocabQueue.isNotEmpty()) vocabQueue.removeAt(0)
-                vocabQueue.add(updated)
+                vocabQueue.add(v)
                 _uiState.value = _uiState.value.copy(wrongCount = _uiState.value.wrongCount + 1)
             }
             setupNextWord()

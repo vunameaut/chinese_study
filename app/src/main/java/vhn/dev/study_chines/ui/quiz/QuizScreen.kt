@@ -106,7 +106,12 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
         Box(Modifier.padding(padding).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
             when {
                 uiState.isLoading -> CircularProgressIndicator(color = MucGiayColors.JadeFill)
-                uiState.step == QuizStep.FINISHED -> FinishContent(correct = uiState.correctCount, wrong = uiState.wrongCount, onBack = onNavigateBack)
+                uiState.step == QuizStep.FINISHED -> FinishContent(
+                    correct = uiState.correctCount,
+                    wrong = uiState.wrongCount,
+                    isRepractice = uiState.isRepractice,
+                    onBack = onNavigateBack
+                )
                 else -> QuizContent(uiState = uiState, viewModel = viewModel)
             }
         }
