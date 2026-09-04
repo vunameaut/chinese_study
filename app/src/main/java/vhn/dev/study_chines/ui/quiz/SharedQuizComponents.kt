@@ -26,11 +26,15 @@ import vhn.dev.study_chines.ui.theme.MucGiayColors
 
 // ===== FLASHCARD COMPONENT =====
 @Composable
-fun FlashCard(hanzi: String) {
+fun FlashCard(
+    hanzi: String,
+    modifier: Modifier = Modifier
+        .widthIn(max = 220.dp)
+        .aspectRatio(1f),
+    fontSize: androidx.compose.ui.unit.TextUnit = 64.sp
+) {
     Card(
-        modifier = Modifier
-            .widthIn(max = 220.dp)
-            .aspectRatio(1f),
+        modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -47,7 +51,7 @@ fun FlashCard(hanzi: String) {
             Text(hanzi,
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Black,
-                fontSize = 64.sp,
+                fontSize = fontSize,
                 color = MucGiayColors.Ink,
                 lineHeight = 1.em
             )

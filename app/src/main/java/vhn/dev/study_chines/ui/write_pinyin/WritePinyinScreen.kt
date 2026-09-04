@@ -113,7 +113,13 @@ fun WritePinyinScreen(
             )
         }
     ) { padding ->
-        Box(Modifier.padding(padding).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding(),
+            contentAlignment = Alignment.TopCenter
+        ) {
             when {
                 uiState.isLoading -> CircularProgressIndicator(color = MucGiayColors.JadeFill)
                 uiState.isFinished -> FinishContent(correct = uiState.correctCount, wrong = uiState.wrongCount, onBack = onNavigateBack)
@@ -129,6 +135,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
     val vocab = uiState.currentVocab ?: return
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val scrollState = rememberScrollState()
 
     // Chống double-tap: nút chỉ bấm được sau 400ms
     var continueClickable by remember { mutableStateOf(false) }
@@ -146,16 +153,27 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
         }
     }
 
-    // Auto-focus TextField khi chuyển từ mới
+    // Auto-focus TextField và tự động cuộn xuống khi chuyển từ mới
     LaunchedEffect(vocab.id) {
-        delay(400) // Đợi animation flashcard xong
+        delay(300)
         try { focusRequester.requestFocus() } catch (_: Exception) {}
+        delay(150)
+        scrollState.animateScrollTo(scrollState.maxValue)
+    }
+
+    // Tự động cuộn khi kết quả hiển thị
+    LaunchedEffect(showContinue) {
+        if (showContinue) {
+            delay(100)
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
     }
 
     Column(
         Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .padding(horizontal = 20.dp)
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Progress bar + counter
@@ -179,7 +197,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Mode label
         Surface(
@@ -195,9 +213,9 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
 
-        // Flashcard với animation trượt khi chuyển từ
+        // Flashcard với animation trượt khi chuyển từ (tối ưu kích thước 160dp khi mở bàn phím)
         AnimatedContent(
             targetState = vocab.hanzi,
             transitionSpec = {
@@ -207,9 +225,17 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                     (slideOutHorizontally(animationSpec = tween(240)) { -it } + fadeOut(tween(180)))
             },
             label = "flashcard"
-        ) { h -> FlashCard(hanzi = h) }
+        ) { h ->
+            FlashCard(
+                hanzi = h,
+                modifier = Modifier
+                    .widthIn(max = 160.dp)
+                    .aspectRatio(1f),
+                fontSize = 54.sp
+            )
+        }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(14.dp))
 
         // Instruction
         Text(
@@ -367,5 +393,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                 Spacer(Modifier.height(16.dp))
             }
         }
+
+        Spacer(Modifier.height(32.dp))
     }
 }

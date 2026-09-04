@@ -153,7 +153,8 @@ fun HomeScreen(
                                 session = lastSession,
                                 ordinal = uiState.sessions.indexOf(lastSession) + 1,
                                 onDelete = { viewModel.deleteSession(lastSession.id) },
-                                onClick = { onNavigateToQuiz(lastSession.id.toLong()) }
+                                onSelectSession = { onNavigateToQuiz(lastSession.id.toLong()) },
+                                onWritePinyin = { onNavigateToWritePinyin(lastSession.id.toLong()) }
                             )
                             Spacer(Modifier.height(20.dp))
                         }
@@ -221,37 +222,11 @@ private fun SessionList(
         SessionCard(
             session = session,
             ordinal = index + 1,
-            onDelete = { onDelete(session.id) }
-        ) {
-            onSelectSession(session.id.toLong())
-        }
-        Spacer(Modifier.height(4.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedButton(
-                onClick = { onWritePinyin(session.id.toLong()) },
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.5.dp, MucGiayColors.Amber),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
-            ) { Text("✏ Viết pinyin", fontWeight = FontWeight.SemiBold, color = MucGiayColors.Amber, fontSize = 13.sp) }
-            Spacer(Modifier.width(8.dp))
-            FilledTonalButton(
-                onClick = { onSelectSession(session.id.toLong()) },
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MucGiayColors.SealSon,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp)
-            ) { Text("Ôn tập ngay", fontWeight = FontWeight.SemiBold) }
-        }
-        Spacer(Modifier.height(16.dp))
+            onDelete = { onDelete(session.id) },
+            onSelectSession = { onSelectSession(session.id.toLong()) },
+            onWritePinyin = { onWritePinyin(session.id.toLong()) }
+        )
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -260,55 +235,134 @@ private fun SessionCard(
     session: SessionDto,
     ordinal: Int,
     onDelete: () -> Unit,
-    onClick: () -> Unit
+    onSelectSession: () -> Unit,
+    onWritePinyin: () -> Unit
 ) {
     val ordinals = listOf('壹','贰','叁','肆','伍','陆','柒','捌','玖','拾')
+    val date = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(
+        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(session.createdAt.substringBefore('.'))
+            ?: java.util.Date()
+    )
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .border(1.5.dp, MucGiayColors.Hairline, RoundedCornerShape(10.dp)),
-        shape = RoundedCornerShape(10.dp),
+            .border(1.dp, MucGiayColors.Hairline, RoundedCornerShape(12.dp)),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                ordinals[ordinal.coerceAtMost(9)].toString(),
-                fontFamily = FontFamily.Serif,
-                fontSize = 15.sp,
-                color = MucGiayColors.InkFaint
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(session.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                val date = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(
-                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(session.createdAt.substringBefore('.'))
-                        ?: java.util.Date()
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(date, fontSize = 12.sp, color = MucGiayColors.InkFaint)
-                    Spacer(Modifier.width(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = MucGiayColors.JadeTint
+        Column(Modifier.padding(16.dp)) {
+            // Header Info Row
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MucGiayColors.Paper)
+                        .border(1.dp, MucGiayColors.Hairline.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        ordinals[ordinal.coerceAtMost(9)].toString(),
+                        fontFamily = FontFamily.Serif,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MucGiayColors.InkSoft
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        session.title,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = MucGiayColors.Ink
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(date, fontSize = 12.sp, color = MucGiayColors.InkFaint)
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MucGiayColors.JadeTint
+                        ) {
+                            Text(
+                                "HSK ${session.hskLevel}",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MucGiayColors.Jade,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+                IconButton(onClick = onDelete, Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Xóa",
+                        tint = MucGiayColors.InkFaint.copy(alpha = 0.6f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider(color = MucGiayColors.Hairline.copy(alpha = 0.7f), thickness = 0.8.dp)
+            Spacer(Modifier.height(12.dp))
+
+            // Action Buttons Row: 2 balanced, polished action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Nút Viết Pinyin (Phong cách Thư Pháp / Bút Lông Mực Giấy)
+                Surface(
+                    onClick = onWritePinyin,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MucGiayColors.AmberTint,
+                    border = BorderStroke(1.2.dp, MucGiayColors.Amber.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "HSK${session.hskLevel}",
-                            fontSize = 10.sp,
+                            "✏  Viết Pinyin",
                             fontWeight = FontWeight.SemiBold,
-                            color = MucGiayColors.Jade,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            color = MucGiayColors.Amber,
+                            fontSize = 13.5.sp
                         )
                     }
                 }
-            }
-            IconButton(onClick = onDelete, Modifier.size(32.dp)) {
-                Icon(
-                    Icons.Default.Delete, contentDescription = "Xóa",
-                    tint = MucGiayColors.InkFaint,
-                    modifier = Modifier.size(18.dp)
-                )
+
+                // Nút Ôn tập ngay (Trắc nghiệm Cổ Phong - Đỏ Son)
+                Surface(
+                    onClick = onSelectSession,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MucGiayColors.SealSon
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Ôn tập ngay",
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            fontSize = 13.5.sp
+                        )
+                    }
+                }
             }
         }
     }
