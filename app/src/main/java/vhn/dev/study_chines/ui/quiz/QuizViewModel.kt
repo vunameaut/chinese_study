@@ -77,7 +77,7 @@ class QuizViewModel(private val repository: StudyRepository, private val session
     }
 
     fun nextStep() {
-        val s = _uiState.value; val v = s.currentVocab ?: return
+        val s = _uiState.value; if (!s.isAnswerSelected) return; val v = s.currentVocab ?: return
         runBlocking {
             if (s.isCorrect) {
                 when (s.step) {

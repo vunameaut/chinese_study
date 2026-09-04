@@ -53,9 +53,15 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
     DisposableEffect(Unit) { onDispose { sound.release() } }
 
 
-    // Phát âm thanh + rung khi chọn đáp án
+    // Đếm số lần chọn đáp án để tránh phát âm thanh trùng khi step thay đổi
+    var answerSoundKey by remember { mutableIntStateOf(0) }
     LaunchedEffect(uiState.isAnswerSelected, uiState.step) {
         if (uiState.isAnswerSelected && uiState.step != QuizStep.FINISHED) {
+            answerSoundKey++
+        }
+    }
+    LaunchedEffect(answerSoundKey) {
+        if (answerSoundKey > 0 && uiState.isAnswerSelected && uiState.step != QuizStep.FINISHED) {
             if (uiState.isCorrect) {
                 // Arpeggio vui tươi: 3 nốt tăng dần
                 sound.play(R.raw.correct)
@@ -198,8 +204,20 @@ private fun ConfettiRain(modifier: Modifier = Modifier) {
 private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: () -> Unit) {
     val vocab = uiState.currentVocab ?: return
     var showContinue by remember { mutableStateOf(false) }
+    // Chống double-tap: nút "Tiếp tục" chỉ bấm được sau 400ms kể từ khi xuất hiện
+    var continueClickable by remember { mutableStateOf(false) }
 
-    LaunchedEffect(uiState.isAnswerSelected) { if (uiState.isAnswerSelected) showContinue = true }
+    LaunchedEffect(uiState.isAnswerSelected) {
+        if (uiState.isAnswerSelected) {
+            showContinue = true
+            continueClickable = false
+            delay(400) // Đợi animation xong mới cho bấm
+            continueClickable = true
+        } else {
+            showContinue = false
+            continueClickable = false
+        }
+    }
 
     Column(
         Modifier
@@ -291,7 +309,7 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedButton(
-                    onClick = { viewModel.nextStep(); showContinue = false },
+                    onClick = { if (continueClickable) { continueClickable = false; viewModel.nextStep(); showContinue = false } },
                     shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.5.dp, MucGiayColors.Hairline),
                     modifier = Modifier.fillMaxWidth().height(52.dp)
