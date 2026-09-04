@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -209,13 +210,13 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
                 color = MucGiayColors.Amber,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // Flashcard với animation trượt khi chuyển từ (tối ưu kích thước 160dp khi mở bàn phím)
+        // Flashcard với animation trượt khi chuyển từ (kích thước nhỏ gọn 130dp để bàn phím không che)
         AnimatedContent(
             targetState = vocab.hanzi,
             transitionSpec = {
@@ -229,31 +230,31 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             FlashCard(
                 hanzi = h,
                 modifier = Modifier
-                    .widthIn(max = 160.dp)
+                    .widthIn(max = 130.dp)
                     .aspectRatio(1f),
-                fontSize = 54.sp
+                fontSize = 46.sp
             )
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Instruction
         Text(
-            "Nhập pinyin cho chữ trên:",
+            "Nhập pinyin (không dấu hoặc có dấu):",
             style = MaterialTheme.typography.labelSmall,
-            letterSpacing = spToEm(0.06f)
+            letterSpacing = spToEm(0.04f)
         )
         Text(
-            "Chấp nhận cả có dấu (xué, xue2) và không dấu (xue). Dùng v thay ü.",
+            "Dùng v thay ü (ví dụ: lv = lǜ)",
             fontSize = 11.sp,
             color = MucGiayColors.InkFaint,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp, start = 16.dp, end = 16.dp)
+            modifier = Modifier.padding(top = 2.dp)
         )
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // Input field
+        // Input field với nút xác nhận nhanh ngay trong ô nhập
         OutlinedTextField(
             value = uiState.userInput,
             onValueChange = { viewModel.onInputChange(it) },
@@ -289,7 +290,28 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                 .fillMaxWidth()
                 .focusRequester(focusRequester),
             trailingIcon = {
-                if (uiState.isChecked) {
+                if (!uiState.isChecked) {
+                    if (uiState.userInput.isNotBlank()) {
+                        IconButton(
+                            onClick = {
+                                keyboardController?.hide()
+                                viewModel.checkAnswer()
+                            },
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(MucGiayColors.Jade)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = "Xác nhận",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                } else {
                     if (uiState.isCorrect) {
                         Icon(Icons.Default.Check, contentDescription = null, tint = MucGiayColors.Jade)
                     } else {
@@ -299,7 +321,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             }
         )
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Check button (trước khi kiểm tra)
         AnimatedVisibility(
@@ -318,9 +340,9 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                     disabledContainerColor = MucGiayColors.Hairline
                 ),
                 shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
+                modifier = Modifier.fillMaxWidth().height(48.dp)
             ) {
-                Text("Kiểm tra", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                Text("Kiểm tra", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
             }
         }
 
@@ -331,43 +353,57 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             exit = fadeOut(tween(120))
         ) {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Kết quả
                 Text(
-                    if (uiState.isCorrect) "Chính xác!" else "Chưa đúng",
+                    if (uiState.isCorrect) "✓ Chính xác!" else "✗ Chưa đúng",
                     style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
                     color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealDeep,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Hiện đáp án đúng khi sai
-                if (!uiState.isCorrect && vocab.pinyin.isNotBlank()) {
+                // Luôn hiển thị phiên âm chuẩn có dấu (kể cả khi gõ không dấu để đối chiếu)
+                if (vocab.pinyin.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MucGiayColors.JadeTint,
-                        border = BorderStroke(1.dp, MucGiayColors.Jade.copy(alpha = 0.3f))
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (uiState.isCorrect) MucGiayColors.JadeTint else MucGiayColors.RedBg,
+                        border = BorderStroke(1.dp, if (uiState.isCorrect) MucGiayColors.Jade.copy(alpha = 0.3f) else MucGiayColors.SealSon.copy(alpha = 0.3f))
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Đáp án đúng:", fontSize = 11.sp, color = MucGiayColors.InkSoft)
-                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                if (uiState.isCorrect) "Phiên âm chuẩn có dấu:" else "Đáp án đúng:",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealDeep
+                            )
+                            Spacer(Modifier.height(3.dp))
                             Text(
                                 vocab.pinyin,
-                                fontSize = 20.sp,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MucGiayColors.Jade,
+                                color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealSon,
                                 fontFamily = FontFamily.Serif
                             )
+                            if (vocab.meaning.isNotBlank()) {
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    vocab.meaning + (if (!vocab.wordType.isNullOrBlank()) " (${vocab.wordType})" else ""),
+                                    fontSize = 13.sp,
+                                    color = MucGiayColors.InkSoft
+                                )
+                            }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Nút tiếp tục
                 OutlinedButton(
@@ -380,13 +416,13 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                     },
                     shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.5.dp, MucGiayColors.Hairline),
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
                     Text(
                         "Tiếp tục",
                         fontWeight = FontWeight.SemiBold,
                         color = MucGiayColors.InkSoft,
-                        fontSize = 16.sp
+                        fontSize = 15.sp
                     )
                 }
 
