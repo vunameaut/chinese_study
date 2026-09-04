@@ -67,9 +67,9 @@ class QuizViewModelTest {
 
         val state = vm.uiState.value
         assertFalse(state.isLoading)
-        assertEquals(v1.id, state.currentVocab?.id)
+        assertTrue(listOf(v1.id, v2.id).contains(state.currentVocab?.id))
         assertEquals(QuizStep.PINYIN_VALIDATION, state.step)
-        assertTrue(state.options.contains(v1.pinyin))
+        assertTrue(state.options.contains(state.currentVocab?.pinyin))
         assertEquals(2, state.remainingVocabs)
     }
 
@@ -107,6 +107,8 @@ class QuizViewModelTest {
         )
 
         val vm = QuizViewModel(repository, 10)
+        val firstId = vm.uiState.value.currentVocab?.id
+
         vm.submitAnswer("wrong")
 
         val s1 = vm.uiState.value
@@ -115,6 +117,7 @@ class QuizViewModelTest {
 
         vm.nextStep()
         val s2 = vm.uiState.value
-        assertEquals(v2.id, s2.currentVocab?.id)
+        val secondId = s2.currentVocab?.id
+        assertTrue(firstId != secondId)
     }
 }

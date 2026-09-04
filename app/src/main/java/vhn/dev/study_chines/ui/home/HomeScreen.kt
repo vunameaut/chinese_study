@@ -1,4 +1,4 @@
-﻿package vhn.dev.study_chines.ui.home
+package vhn.dev.study_chines.ui.home
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -36,14 +35,11 @@ import vhn.dev.study_chines.ui.theme.MucGiayColors
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNavigateToEntry: (sessionId: Long) -> Unit,
     onNavigateToQuiz: (sessionId: Long) -> Unit,
+    onNavigateToWritePinyin: (sessionId: Long) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var showNewSession by remember { mutableStateOf(false) }
-    var sessionTitle by remember { mutableStateOf("") }
-    var newHskLevel by remember { mutableIntStateOf(1) }
 
     val pullToRefreshState = rememberPullToRefreshState()
     if (pullToRefreshState.isRefreshing) {
@@ -70,12 +66,6 @@ fun HomeScreen(
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Cài đặt", tint = MucGiayColors.InkSoft)
-                    }
-                    IconButton(onClick = { 
-                        newHskLevel = uiState.selectedHsk
-                        showNewSession = true 
-                    }) {
-                        Icon(Icons.Default.Add, contentDescription = "Tạo buổi học", tint = MucGiayColors.SealSon)
                     }
                 }
             )
@@ -170,13 +160,13 @@ fun HomeScreen(
                     }
 
                     if (filteredSessions.isEmpty()) {
-                        EmptyHomeState(onClick = { newHskLevel = uiState.selectedHsk; showNewSession = true })
+                        EmptyHomeState()
                     } else {
                         SessionList(
                             sessions = filteredSessions,
                             onDelete = { viewModel.deleteSession(it) },
                             onSelectSession = onNavigateToQuiz,
-                            onAddVocab = onNavigateToEntry
+                            onWritePinyin = onNavigateToWritePinyin
                         )
                     }
                 }
@@ -192,87 +182,14 @@ fun HomeScreen(
             )
         }
     }
-
-    // New Session Dialog
-    if (showNewSession) {
-        AlertDialog(
-            onDismissRequest = { showNewSession = false },
-            containerColor = MucGiayColors.Paper,
-            shape = RoundedCornerShape(12.dp),
-            title = { Text("Tạo buổi ôn tập mới", style = MaterialTheme.typography.headlineMedium) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // HSK level selector in dialog
-                    Text("Chọn trình độ HSK", style = MaterialTheme.typography.labelMedium, color = MucGiayColors.InkSoft)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        viewModel.hskLevels.forEach { level ->
-                            val isSelected = newHskLevel == level
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) MucGiayColors.Jade else Color.Transparent,
-                                contentColor = if (isSelected) Color.White else MucGiayColors.InkSoft,
-                                border = if (!isSelected) BorderStroke(1.dp, MucGiayColors.Hairline) else null,
-                                modifier = Modifier.clickable { newHskLevel = level }
-                            ) {
-                                Text(
-                                    "$level",
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                )
-                            }
-                        }
-                    }
-                    OutlinedTextField(
-                        value = sessionTitle,
-                        onValueChange = { sessionTitle = it },
-                        label = { Text("Tên buổi học") },
-                        placeholder = { Text("VD: Buổi 1 - Lớp 10A1") },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MucGiayColors.Jade,
-                            cursorColor = MucGiayColors.Ink
-                        )
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val title = sessionTitle.ifBlank { "Buổi ${filteredSessions.size + 1}" }
-                        viewModel.createSession(title, newHskLevel) { id ->
-                            showNewSession = false
-                            sessionTitle = ""
-                            onNavigateToEntry(id)
-                        }
-                    },
-                    enabled = true
-                ) { Text("Tạo", color = MucGiayColors.SealSon, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showNewSession = false }) { Text("Hủy", color = MucGiayColors.InkSoft) }
-            }
-        )
-    }
 }
 
 @Composable
-private fun EmptyHomeState(onClick: () -> Unit) {
+private fun EmptyHomeState() {
     Column(
         Modifier.fillMaxWidth().padding(top = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            Icons.Default.Add, contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MucGiayColors.Jade.copy(alpha = 0.5f)
-        )
-        Spacer(Modifier.height(16.dp))
         Text(
             "Chưa có buổi ôn tập nào",
             style = MaterialTheme.typography.headlineMedium,
@@ -280,16 +197,9 @@ private fun EmptyHomeState(onClick: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Tạo buổi mới để bắt đầu nhập từ vựng và ôn tập",
+            "Hiện chưa có bài học nào trong cấp độ HSK này",
             color = MucGiayColors.InkFaint, fontSize = 14.sp
         )
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = onClick,
-            colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.SealSon),
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier.padding(horizontal = 40.dp).height(52.dp)
-        ) { Text("Tạo buổi học đầu tiên", fontWeight = FontWeight.SemiBold) }
     }
 }
 
@@ -298,7 +208,7 @@ private fun SessionList(
     sessions: List<SessionDto>,
     onDelete: (Int) -> Unit,
     onSelectSession: (Long) -> Unit,
-    onAddVocab: (Long) -> Unit
+    onWritePinyin: (Long) -> Unit
 ) {
     Text(
         "CÁC BUỔI ÔN TẬP",
@@ -317,11 +227,20 @@ private fun SessionList(
         }
         Spacer(Modifier.height(4.dp))
 
-        Row(Modifier.padding(start = 28.dp)) {
-            TextButton(onClick = { onAddVocab(session.id.toLong()) }) {
-                Text("+ Thêm từ", color = MucGiayColors.Jade, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-            }
-            Spacer(Modifier.weight(1f))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(
+                onClick = { onWritePinyin(session.id.toLong()) },
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.5.dp, MucGiayColors.Amber),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+            ) { Text("✏ Viết pinyin", fontWeight = FontWeight.SemiBold, color = MucGiayColors.Amber, fontSize = 13.sp) }
+            Spacer(Modifier.width(8.dp))
             FilledTonalButton(
                 onClick = { onSelectSession(session.id.toLong()) },
                 colors = ButtonDefaults.filledTonalButtonColors(

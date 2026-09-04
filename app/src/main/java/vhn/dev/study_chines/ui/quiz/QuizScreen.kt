@@ -107,101 +107,17 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
             when {
                 uiState.isLoading -> CircularProgressIndicator(color = MucGiayColors.JadeFill)
                 uiState.step == QuizStep.FINISHED -> FinishContent(correct = uiState.correctCount, wrong = uiState.wrongCount, onBack = onNavigateBack)
-                else -> QuizContent(uiState = uiState, viewModel = viewModel, onBack = onNavigateBack)
+                else -> QuizContent(uiState = uiState, viewModel = viewModel)
             }
         }
     }
 }
 
-// ===== FINISH SCREEN =====
-@Composable
-private fun FinishContent(correct: Int, wrong: Int, onBack: () -> Unit) {
-    var appeared by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { appeared = true }
-    val iconScale by animateFloatAsState(
-        targetValue = if (appeared) 1f else 0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "finishIcon"
-    )
 
-    Box(Modifier.fillMaxSize()) {
-        ConfettiRain(Modifier.fillMaxSize())
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.weight(0.15f))
-            Icon(Icons.Default.CheckCircle, contentDescription = null,
-                modifier = Modifier.size(56.dp).scale(iconScale), tint = MucGiayColors.Jade)
-            Spacer(Modifier.height(12.dp))
-            Text("Hoàn thành", style = MaterialTheme.typography.headlineMedium, color = MucGiayColors.Ink)
-            Text("Hôm nay bạn đã thuộc $correct từ", color = MucGiayColors.InkSoft, fontSize = 14.sp)
-
-            Spacer(Modifier.height(28.dp))
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 32.dp).fillMaxWidth()) {
-                StatColumn(value = "$correct", label = "Thuộc được", color = MucGiayColors.Jade)
-                Spacer(Modifier.width(40.dp))
-                StatColumn(value = "$wrong", label = "Lần sai", color = MucGiayColors.SealSon)
-            }
-
-            Spacer(Modifier.weight(0.2f))
-            Button(
-                onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.SealSon),
-                shape = RoundedCornerShape(10.dp), modifier = Modifier.height(52.dp).fillMaxWidth().padding(horizontal = 32.dp)
-            ) { Text("Về trang chủ", fontWeight = FontWeight.SemiBold) }
-            Spacer(Modifier.weight(0.1f))
-        }
-    }
-}
-
-@Composable
-private fun StatColumn(value: String, label: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp), color = color)
-        Text(label, style = MaterialTheme.typography.labelSmall, letterSpacing = spToEm(0.02f))
-    }
-}
-
-// ===== CONFETTI =====
-private data class Particle(val x: Float, val y: Float, val speed: Float, val size: Float, val color: Color)
-
-@Composable
-private fun ConfettiRain(modifier: Modifier = Modifier) {
-    val colors = listOf(
-        Color(0xFFE53935), Color(0xFFFFB300), Color(0xFF43A047),
-        Color(0xFF1E88E5), Color(0xFFEC407A), Color(0xFF8E24AA),
-        Color(0xFFFF7043), Color(0xFF00ACC1)
-    )
-    val particles = remember {
-        List(60) {
-            Particle(
-                x = Random.nextFloat(),
-                y = Random.nextFloat(),
-                speed = Random.nextFloat() * 0.6f + 0.3f,
-                size = Random.nextFloat() * 7f + 4f,
-                color = colors[Random.nextInt(colors.size)]
-            )
-        }
-    }
-    val transition = rememberInfiniteTransition(label = "confetti")
-    val progress by transition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(3200, easing = LinearEasing)),
-        label = "confettiProgress"
-    )
-    Canvas(modifier = modifier) {
-        particles.forEach { p ->
-            val y = ((p.y + progress * p.speed) % 1.05f) * size.height
-            val sway = kotlin.math.sin((progress * 6f + p.x * 10f).toFloat()) * 20f
-            drawCircle(
-                color = p.color,
-                radius = p.size,
-                center = Offset(p.x * size.width + sway, y)
-            )
-        }
-    }
-}
 
 // ===== QUIZ CONTENT =====
 @Composable
-private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: () -> Unit) {
+private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel) {
     val vocab = uiState.currentVocab ?: return
     var showContinue by remember { mutableStateOf(false) }
     // Chống double-tap: nút "Tiếp tục" chỉ bấm được sau 400ms kể từ khi xuất hiện
@@ -320,47 +236,6 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel, onBack: ()
     }
 }
 
-// ===== FLASHCARD COMPONENT =====
-@Composable
-private fun FlashCard(hanzi: String) {
-    Card(
-        modifier = Modifier
-            .widthIn(max = 220.dp)
-            .aspectRatio(1f),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.5.dp, MucGiayColors.Hairline)
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Box(Modifier.matchParentSize()) {
-                Canvas(modifier = Modifier.matchParentSize()) {
-                    val gridColor = MucGiayColors.Hairline.copy(alpha = 0.4f)
-                    drawLine(gridColor, Offset(size.width * 0.5f, 0f), Offset(size.width * 0.5f, size.height), strokeWidth = 1.dp.toPx())
-                    drawLine(gridColor, Offset(0f, size.height * 0.5f), Offset(size.width, size.height * 0.5f), strokeWidth = 1.dp.toPx())
-                }
-            }
-            Text(hanzi,
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Black,
-                fontSize = 64.sp,
-                color = MucGiayColors.Ink,
-                lineHeight = 1.em
-            )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(10.dp)
-                    .size(26.dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(MucGiayColors.SealSon),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("学", fontFamily = FontFamily.Serif, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
-            }
-        }
-    }
-}
 
 // ===== STEP CHIP =====
 @Composable
@@ -449,4 +324,3 @@ private fun OptionRow(ordinal: Char, text: String, enabled: Boolean, state: Opti
     HorizontalDivider(color = MucGiayColors.Hairline, thickness = 0.5.dp)
 }
 
-private fun spToEm(v: Float): androidx.compose.ui.unit.TextUnit = v.em
