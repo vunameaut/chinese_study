@@ -143,25 +143,36 @@ fun ConfettiRain(modifier: Modifier = Modifier) {
         List(60) {
             Particle(
                 x = Random.nextFloat(),
-                y = Random.nextFloat(),
-                speed = Random.nextFloat() * 0.6f + 0.3f,
-                size = Random.nextFloat() * 7f + 4f,
+                y = -Random.nextFloat() * 0.25f,
+                speed = Random.nextFloat() * 0.5f + 0.7f,
+                size = Random.nextFloat() * 6f + 4f,
                 color = colors[Random.nextInt(colors.size)]
             )
         }
     }
-    val transition = rememberInfiniteTransition(label = "confetti")
-    val progress by transition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(3200, easing = LinearEasing)),
-        label = "confettiProgress"
-    )
+    val animatable = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        animatable.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 2800, easing = LinearEasing)
+        )
+    }
+
+    val progress = animatable.value
+    if (progress >= 1f) return
+
+    val alpha = if (progress > 0.65f) {
+        (1f - (progress - 0.65f) / 0.35f).coerceIn(0f, 1f)
+    } else {
+        1f
+    }
+
     Canvas(modifier = modifier) {
         particles.forEach { p ->
-            val y = ((p.y + progress * p.speed) % 1.05f) * size.height
-            val sway = kotlin.math.sin((progress * 6f + p.x * 10f).toFloat()) * 20f
+            val y = (p.y + progress * p.speed) * size.height
+            val sway = kotlin.math.sin((progress * 8f + p.x * 10f).toDouble()).toFloat() * 24f
             drawCircle(
-                color = p.color,
+                color = p.color.copy(alpha = p.color.alpha * alpha),
                 radius = p.size,
                 center = Offset(p.x * size.width + sway, y)
             )
