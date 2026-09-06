@@ -12,9 +12,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +22,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -39,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import vhn.dev.study_chines.R
+import vhn.dev.study_chines.audio.ChineseSpeechManager
 import vhn.dev.study_chines.data.local.UserPreferences
 import vhn.dev.study_chines.ui.quiz.FinishContent
 import vhn.dev.study_chines.ui.quiz.FlashCard
@@ -55,15 +54,22 @@ fun WritePinyinScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
-
-    // Âm thanh hiệu ứng
     val context = LocalContext.current
+
+    // Âm thanh hiệu ứng & giọng đọc tiếng Trung
     val sound = remember {
         SoundManager(context, preferences).apply {
             loadDefault(R.raw.correct, R.raw.wrong, R.raw.finish)
         }
     }
-    DisposableEffect(Unit) { onDispose { sound.release() } }
+    val speech = remember { ChineseSpeechManager(context, preferences) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            sound.release()
+            speech.release()
+        }
+    }
 
     // Phát âm thanh khi kiểm tra đáp án
     var answerSoundKey by remember { mutableIntStateOf(0) }
@@ -85,12 +91,19 @@ fun WritePinyinScreen(
                 sound.play(R.raw.wrong)
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             }
+
+            // Tự động phát âm sau khi kiểm tra gõ Pinyin
+            uiState.currentVocab?.let { v ->
+                delay(200)
+                speech.speak(v.hanzi.ifBlank { v.pinyin })
+            }
         }
     }
 
     // Fanfare khi hoàn thành
     LaunchedEffect(uiState.isFinished) {
         if (uiState.isFinished && !uiState.isLoading) {
+            speech.stop()
             sound.play(R.raw.finish)
             delay(140)
             sound.play(R.raw.finish)
@@ -107,8 +120,11 @@ fun WritePinyinScreen(
             TopAppBar(
                 title = { },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Trở về", tint = MucGiayColors.InkSoft)
+                    IconButton(onClick = {
+                        speech.stop()
+                        onNavigateBack()
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Trở về", tint = MucGiayColors.InkSoft)
                     }
                 }
             )
@@ -129,7 +145,7 @@ fun WritePinyinScreen(
                     isRepractice = uiState.isRepractice,
                     onBack = onNavigateBack
                 )
-                else -> WritePinyinContent(uiState = uiState, viewModel = viewModel)
+                else -> WritePinyinContent(uiState = uiState, viewModel = viewModel, speechManager = speech)
             }
         }
     }
@@ -137,13 +153,16 @@ fun WritePinyinScreen(
 
 // ===== WRITE PINYIN CONTENT =====
 @Composable
-private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyinViewModel) {
+private fun WritePinyinContent(
+    uiState: WritePinyinState,
+    viewModel: WritePinyinViewModel,
+    speechManager: ChineseSpeechManager
+) {
     val vocab = uiState.currentVocab ?: return
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val scrollState = rememberScrollState()
 
-    // Chống double-tap: nút chỉ bấm được sau 400ms
     var continueClickable by remember { mutableStateOf(false) }
     var showContinue by remember { mutableStateOf(false) }
 
@@ -159,7 +178,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
         }
     }
 
-    // Auto-focus TextField và tự động cuộn xuống khi chuyển từ mới
+    // Auto-focus TextField và cuộn xuống khi chuyển từ mới
     LaunchedEffect(vocab.id) {
         delay(300)
         try { focusRequester.requestFocus() } catch (_: Exception) {}
@@ -211,7 +230,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             color = MucGiayColors.AmberTint
         ) {
             Text(
-                "✏ Viết Pinyin",
+                "✍️ Viết Pinyin",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 12.sp,
                 color = MucGiayColors.Amber,
@@ -221,7 +240,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
 
         Spacer(Modifier.height(8.dp))
 
-        // Flashcard với animation trượt khi chuyển từ (kích thước nhỏ gọn 130dp để bàn phím không che)
+        // Flashcard với animation trượt khi chuyển từ
         AnimatedContent(
             targetState = vocab.hanzi,
             transitionSpec = {
@@ -250,7 +269,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             letterSpacing = spToEm(0.04f)
         )
         Text(
-            "Dùng v thay ü (ví dụ: lv = lǜ)",
+            "Dùng v thay ü (ví dụ: lv = lü)",
             fontSize = 11.sp,
             color = MucGiayColors.InkFaint,
             textAlign = TextAlign.Center,
@@ -351,7 +370,7 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
             }
         }
 
-        // Feedback + Continue (sau khi kiểm tra)
+        // Feedback + Loa nghe lại + Tiếp tục (sau khi kiểm tra)
         AnimatedVisibility(
             visible = showContinue,
             enter = fadeIn(tween(200)) + expandVertically(tween(250)),
@@ -370,38 +389,62 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Luôn hiển thị phiên âm chuẩn có dấu (kể cả khi gõ không dấu để đối chiếu)
+                // Khung đáp án chuẩn & nút LOA nghe lại
                 if (vocab.pinyin.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = if (uiState.isCorrect) MucGiayColors.JadeTint else MucGiayColors.RedBg,
-                        border = BorderStroke(1.dp, if (uiState.isCorrect) MucGiayColors.Jade.copy(alpha = 0.3f) else MucGiayColors.SealSon.copy(alpha = 0.3f))
+                        border = BorderStroke(1.dp, if (uiState.isCorrect) MucGiayColors.Jade.copy(alpha = 0.3f) else MucGiayColors.SealSon.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                if (uiState.isCorrect) "Phiên âm chuẩn có dấu:" else "Đáp án đúng:",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealDeep
-                            )
-                            Spacer(Modifier.height(3.dp))
-                            Text(
-                                vocab.pinyin,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealSon,
-                                fontFamily = FontFamily.Serif
-                            )
-                            if (vocab.meaning.isNotBlank()) {
-                                Spacer(Modifier.height(2.dp))
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    vocab.meaning + (if (!vocab.wordType.isNullOrBlank()) " (${vocab.wordType})" else ""),
-                                    fontSize = 13.sp,
-                                    color = MucGiayColors.InkSoft
+                                    if (uiState.isCorrect) "Phiên âm chuẩn có dấu:" else "Đáp án đúng:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealDeep
+                                )
+                                Spacer(Modifier.height(3.dp))
+                                Text(
+                                    vocab.pinyin,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealSon,
+                                    fontFamily = FontFamily.Serif
+                                )
+                                if (vocab.meaning.isNotBlank()) {
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        vocab.meaning + (if (!vocab.wordType.isNullOrBlank()) " (${vocab.wordType})" else ""),
+                                        fontSize = 13.sp,
+                                        color = MucGiayColors.InkSoft
+                                    )
+                                }
+                            }
+
+                            // Nút loa phát lại (Replay Speaker)
+                            IconButton(
+                                onClick = {
+                                    speechManager.speak(vocab.hanzi.ifBlank { vocab.pinyin }, forcePlay = true)
+                                },
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealSon)
+                            ) {
+                                Icon(
+                                    Icons.Default.PlayArrow,
+                                    contentDescription = "Nghe lại phát âm",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -415,18 +458,23 @@ private fun WritePinyinContent(uiState: WritePinyinState, viewModel: WritePinyin
                     onClick = {
                         if (continueClickable) {
                             continueClickable = false
+                            speechManager.stop()
                             viewModel.nextWord()
                             showContinue = false
                         }
                     },
                     shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.5.dp, MucGiayColors.Hairline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MucGiayColors.SealSon,
+                        contentColor = Color.White
+                    ),
                     modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
                     Text(
                         "Tiếp tục",
-                        fontWeight = FontWeight.SemiBold,
-                        color = MucGiayColors.InkSoft,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
                         fontSize = 15.sp
                     )
                 }

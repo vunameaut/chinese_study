@@ -1,9 +1,5 @@
 package vhn.dev.study_chines.ui.quiz
 
-import androidx.compose.ui.platform.LocalContext
-import vhn.dev.study_chines.R
-import android.media.AudioManager
-import android.media.ToneGenerator
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -11,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,40 +15,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
-import kotlin.random.Random
-import vhn.dev.study_chines.ui.theme.MucGiayColors
+import vhn.dev.study_chines.R
+import vhn.dev.study_chines.audio.ChineseSpeechManager
 import vhn.dev.study_chines.data.local.UserPreferences
+import vhn.dev.study_chines.ui.theme.MucGiayColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigateBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
-
-    // Âm thanh hiệu ứng
     val context = LocalContext.current
-    val sound = remember { 
+
+    // Âm thanh hiệu ứng & giọng đọc tiếng Trung
+    val sound = remember {
         SoundManager(context, preferences).apply {
             loadDefault(R.raw.correct, R.raw.wrong, R.raw.finish)
         }
     }
-    DisposableEffect(Unit) { onDispose { sound.release() } }
+    val speech = remember { ChineseSpeechManager(context, preferences) }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            sound.release()
+            speech.release()
+        }
+    }
 
     // Đếm số lần chọn đáp án để tránh phát âm thanh trùng khi step thay đổi
     var answerSoundKey by remember { mutableIntStateOf(0) }
@@ -63,7 +65,6 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
     LaunchedEffect(answerSoundKey) {
         if (answerSoundKey > 0 && uiState.isAnswerSelected && uiState.step != QuizStep.FINISHED) {
             if (uiState.isCorrect) {
-                // Arpeggio vui tươi: 3 nốt tăng dần
                 sound.play(R.raw.correct)
                 delay(70)
                 sound.play(R.raw.correct)
@@ -74,12 +75,21 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
                 sound.play(R.raw.wrong)
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             }
+
+            // CHỈ PHÁT ÂM KHI HOÀN THÀNH BƯỚC CHỌN PINYIN, KHÔNG PHÁT ÂM KHI CHỌN NGHĨA
+            if (uiState.step == QuizStep.PINYIN_VALIDATION) {
+                uiState.currentVocab?.let { v ->
+                    delay(200)
+                    speech.speak(v.hanzi.ifBlank { v.pinyin })
+                }
+            }
         }
     }
 
     // Fanfare khi hoàn thành
     LaunchedEffect(uiState.step) {
         if (uiState.step == QuizStep.FINISHED && !uiState.isLoading) {
+            speech.stop()
             sound.play(R.raw.finish)
             delay(140)
             sound.play(R.raw.finish)
@@ -96,8 +106,11 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
             TopAppBar(
                 title = { },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Trở về", tint = MucGiayColors.InkSoft)
+                    IconButton(onClick = {
+                        speech.stop()
+                        onNavigateBack()
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Trở về", tint = MucGiayColors.InkSoft)
                     }
                 }
             )
@@ -112,20 +125,21 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
                     isRepractice = uiState.isRepractice,
                     onBack = onNavigateBack
                 )
-                else -> QuizContent(uiState = uiState, viewModel = viewModel)
+                else -> QuizContent(uiState = uiState, viewModel = viewModel, speechManager = speech)
             }
         }
     }
 }
 
-
-
 // ===== QUIZ CONTENT =====
 @Composable
-private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel) {
+private fun QuizContent(
+    uiState: QuizState,
+    viewModel: QuizViewModel,
+    speechManager: ChineseSpeechManager
+) {
     val vocab = uiState.currentVocab ?: return
     var showContinue by remember { mutableStateOf(false) }
-    // Chống double-tap: nút "Tiếp tục" chỉ bấm được sau 400ms kể từ khi xuất hiện
     var continueClickable by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.isAnswerSelected) {
@@ -154,8 +168,11 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel) {
                 Box(Modifier.fillMaxWidth(progress.coerceIn(0f..1f)).background(MucGiayColors.JadeFill))
             }
             Spacer(Modifier.width(8.dp))
-            Text("${uiState.remainingVocabs - if(uiState.isAnswerSelected && !uiState.isCorrect) 1 else 0}/${uiState.remainingVocabs}",
-                style = MaterialTheme.typography.labelMedium, color = MucGiayColors.InkSoft)
+            Text(
+                "${uiState.remainingVocabs - if(uiState.isAnswerSelected && !uiState.isCorrect) 1 else 0}/${uiState.remainingVocabs}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MucGiayColors.InkSoft
+            )
         }
 
         Spacer(Modifier.height(16.dp))
@@ -163,7 +180,7 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel) {
         // Step chips
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             StepChip(text = "1 Phiên Âm", active = uiState.step == QuizStep.PINYIN_VALIDATION)
-            Text(",", color = MucGiayColors.InkFaint, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 4.dp))
+            Text(" • ", color = MucGiayColors.InkFaint, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 4.dp))
             StepChip(text = "2 Nghĩa", active = uiState.step == QuizStep.MEANING_VALIDATION)
         }
 
@@ -184,13 +201,16 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel) {
         Spacer(Modifier.height(16.dp))
 
         // Options instruction
-        Text(if (uiState.step == QuizStep.PINYIN_VALIDATION) "Chọn phiên âm đúng:" else "Chọn nghĩa đúng:",
-            style = MaterialTheme.typography.labelSmall, letterSpacing = spToEm(0.06f))
+        Text(
+            if (uiState.step == QuizStep.PINYIN_VALIDATION) "Chọn phiên âm đúng:" else "Chọn nghĩa đúng:",
+            style = MaterialTheme.typography.labelSmall,
+            letterSpacing = spToEm(0.06f)
+        )
 
         Spacer(Modifier.height(8.dp))
 
         // Options list
-        val ordinals = listOf('甲','乙','丙','丁')
+        val ordinals = listOf('A', 'B', 'C', 'D')
         uiState.options.forEachIndexed { idx, option ->
             val isSelected = uiState.isAnswerSelected
             val isCorrectAnswer = when (uiState.step) {
@@ -200,7 +220,7 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel) {
             }
 
             OptionRow(
-                ordinal = ordinals[idx],
+                ordinal = ordinals.getOrElse(idx) { '-' },
                 text = option,
                 enabled = !isSelected,
                 state = when {
@@ -213,34 +233,114 @@ private fun QuizContent(uiState: QuizState, viewModel: QuizViewModel) {
             )
         }
 
-        // Feedback + Continue button
+        // Feedback + Loa nghe lại + Nút tiếp tục
         AnimatedVisibility(
             visible = showContinue,
             enter = fadeIn(tween(200)) + expandVertically(tween(250)),
             exit = fadeOut(tween(120))
         ) {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(14.dp))
+
+                // Trạng thái đúng / sai
                 Text(
-                    if (uiState.isCorrect) "Chính xác" else "Chưa đúng",
+                    if (uiState.isCorrect) "✓ Chính xác!" else "✗ Chưa đúng!",
                     style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
                     color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealDeep,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(Modifier.height(8.dp))
+
+                // Khung hiển thị đáp án chuẩn & nút LOA nghe lại
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (uiState.isCorrect) MucGiayColors.JadeTint else MucGiayColors.RedBg,
+                    border = BorderStroke(1.dp, if (uiState.isCorrect) MucGiayColors.Jade.copy(alpha = 0.3f) else MucGiayColors.SealSon.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "Đáp án chuẩn: ",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MucGiayColors.InkSoft
+                                )
+                                Text(
+                                    vocab.pinyin,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealSon,
+                                    fontFamily = FontFamily.Serif
+                                )
+                            }
+                            if (vocab.meaning.isNotBlank()) {
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    "Nghĩa: ${vocab.meaning}" + (if (!vocab.wordType.isNullOrBlank()) " (${vocab.wordType})" else ""),
+                                    fontSize = 12.5.sp,
+                                    color = MucGiayColors.InkSoft
+                                )
+                            }
+                        }
+
+                        // Nút loa phát lại (Replay Speaker)
+                        IconButton(
+                            onClick = {
+                                speechManager.speak(vocab.hanzi.ifBlank { vocab.pinyin }, forcePlay = true)
+                            },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (uiState.isCorrect) MucGiayColors.Jade else MucGiayColors.SealSon)
+                        ) {
+                            Icon(
+                                Icons.Default.PlayArrow,
+                                contentDescription = "Nghe lại phát âm",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+
                 Spacer(Modifier.height(12.dp))
+
                 OutlinedButton(
-                    onClick = { if (continueClickable) { continueClickable = false; viewModel.nextStep(); showContinue = false } },
+                    onClick = {
+                        if (continueClickable) {
+                            continueClickable = false
+                            speechManager.stop()
+                            viewModel.nextStep()
+                            showContinue = false
+                        }
+                    },
                     shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.5.dp, MucGiayColors.Hairline),
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) { Text("Tiếp tục", fontWeight = FontWeight.SemiBold, color = MucGiayColors.InkSoft, fontSize = 16.sp) }
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MucGiayColors.SealSon,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Text("Tiếp tục", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                }
+
                 Spacer(Modifier.height(16.dp))
             }
         }
     }
 }
-
 
 // ===== STEP CHIP =====
 @Composable
@@ -255,7 +355,7 @@ private fun StepChip(text: String, active: Boolean) {
     }
 }
 
-// ===== OPTION ROW (có animation: đúng thì nảy, sai thì rung) =====
+// ===== OPTION ROW =====
 enum class OptionState { Normal, Correct, Wrong }
 
 @Composable
@@ -281,13 +381,11 @@ private fun OptionRow(ordinal: Char, text: String, enabled: Boolean, state: Opti
         else -> Color.Transparent
     }
 
-    // Scale nảy khi đúng (bouncy hơn)
     val scale by animateFloatAsState(
-        targetValue = if (state == OptionState.Correct) 1.06f else 1f,
+        targetValue = if (state == OptionState.Correct) 1.05f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
         label = "optionScale"
     )
-    // Rung khi sai
     val shake = remember { Animatable(0f) }
     LaunchedEffect(state) {
         if (state == OptionState.Wrong) {
@@ -328,4 +426,3 @@ private fun OptionRow(ordinal: Char, text: String, enabled: Boolean, state: Opti
     }
     HorizontalDivider(color = MucGiayColors.Hairline, thickness = 0.5.dp)
 }
-

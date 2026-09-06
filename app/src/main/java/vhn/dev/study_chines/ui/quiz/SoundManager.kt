@@ -7,7 +7,7 @@ import vhn.dev.study_chines.data.local.UserPreferences
 import java.io.File
 
 /**
- * Quản lý âm thanh hiệu ứng từ file (SoundPool).
+ * Quản lý âm thanh hiệu ứng từ file (SoundPool) hỗ trợ điều chỉnh âm lượng 0 - 200% kiểu Discord.
  */
 class SoundManager(context: Context, private val preferences: UserPreferences) {
     private val appContext = context.applicationContext
@@ -22,7 +22,7 @@ class SoundManager(context: Context, private val preferences: UserPreferences) {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
         soundPool = SoundPool.Builder()
-            .setMaxStreams(4)
+            .setMaxStreams(6)
             .setAudioAttributes(attrs)
             .build()
     }
@@ -41,8 +41,20 @@ class SoundManager(context: Context, private val preferences: UserPreferences) {
         return soundPool.load(file.absolutePath, 1)
     }
 
-    fun play(resId: Int, volume: Float = 1f) {
-        if (!preferences.isSoundEnabled) return
+    fun play(resId: Int, volume: Float = 1f, forcePlay: Boolean = false) {
+        if (!forcePlay) {
+            if (!preferences.masterEnabled || preferences.masterVolume <= 0) return
+        }
+
+        val isFinish = (resId == vhn.dev.study_chines.R.raw.finish)
+        val channelEnabled = if (isFinish) preferences.finishEnabled else preferences.sfxEnabled
+        val channelVol = if (isFinish) preferences.finishVolume else preferences.sfxVolume
+
+        if (!forcePlay && (!channelEnabled || channelVol <= 0)) return
+
+        val masterScale = if (preferences.masterEnabled) preferences.masterVolume / 100f else 1f
+        val channelScale = channelVol / 100f
+        val finalVol = (volume * masterScale * channelScale).coerceIn(0.05f, 2.0f)
 
         val customPath = when (resId) {
             vhn.dev.study_chines.R.raw.correct -> preferences.customCorrectSoundPath
@@ -63,14 +75,14 @@ class SoundManager(context: Context, private val preferences: UserPreferences) {
             
             val id = customSoundIds[resId]
             if (id != null) {
-                soundPool.play(id, volume, volume, 1, 0, 1f)
+                soundPool.play(id, finalVol, finalVol, 1, 0, 1f)
                 return
             }
         }
 
         // Fallback to default
         val id = soundIds[resId] ?: return
-        soundPool.play(id, volume, volume, 1, 0, 1f)
+        soundPool.play(id, finalVol, finalVol, 1, 0, 1f)
     }
 
     fun release() {
