@@ -56,8 +56,8 @@ class HomeViewModel(
         }
     }
 
-    fun deleteSession(id: Int) {
-        viewModelScope.launch { repository.deleteSession(id) }
+    fun deleteSession(@Suppress("UNUSED_PARAMETER") id: Int) {
+        // Quyền xóa buổi học đã bị vô hiệu hóa
     }
 
     fun clearError() {

@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -152,7 +151,6 @@ fun HomeScreen(
                             SessionCard(
                                 session = lastSession,
                                 ordinal = uiState.sessions.indexOf(lastSession) + 1,
-                                onDelete = { viewModel.deleteSession(lastSession.id) },
                                 onSelectSession = { onNavigateToQuiz(lastSession.id.toLong()) },
                                 onWritePinyin = { onNavigateToWritePinyin(lastSession.id.toLong()) }
                             )
@@ -165,7 +163,6 @@ fun HomeScreen(
                     } else {
                         SessionList(
                             sessions = filteredSessions,
-                            onDelete = { viewModel.deleteSession(it) },
                             onSelectSession = onNavigateToQuiz,
                             onWritePinyin = onNavigateToWritePinyin
                         )
@@ -207,7 +204,6 @@ private fun EmptyHomeState() {
 @Composable
 private fun SessionList(
     sessions: List<SessionDto>,
-    onDelete: (Int) -> Unit,
     onSelectSession: (Long) -> Unit,
     onWritePinyin: (Long) -> Unit
 ) {
@@ -222,7 +218,6 @@ private fun SessionList(
         SessionCard(
             session = session,
             ordinal = index + 1,
-            onDelete = { onDelete(session.id) },
             onSelectSession = { onSelectSession(session.id.toLong()) },
             onWritePinyin = { onWritePinyin(session.id.toLong()) }
         )
@@ -234,7 +229,6 @@ private fun SessionList(
 private fun SessionCard(
     session: SessionDto,
     ordinal: Int,
-    onDelete: () -> Unit,
     onSelectSession: () -> Unit,
     onWritePinyin: () -> Unit
 ) {
@@ -296,14 +290,6 @@ private fun SessionCard(
                             )
                         }
                     }
-                }
-                IconButton(onClick = onDelete, Modifier.size(32.dp)) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Xóa",
-                        tint = MucGiayColors.InkFaint.copy(alpha = 0.6f),
-                        modifier = Modifier.size(18.dp)
-                    )
                 }
             }
 
