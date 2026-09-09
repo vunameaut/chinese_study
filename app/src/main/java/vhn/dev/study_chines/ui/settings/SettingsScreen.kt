@@ -2,6 +2,7 @@ package vhn.dev.study_chines.ui.settings
 
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -24,12 +25,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.launch
+import vhn.dev.study_chines.BuildConfig
 import vhn.dev.study_chines.R
 import vhn.dev.study_chines.audio.ChineseSpeechManager
 import vhn.dev.study_chines.audio.VoiceOption
 import vhn.dev.study_chines.data.local.UserPreferences
 import vhn.dev.study_chines.ui.quiz.SoundManager
 import vhn.dev.study_chines.ui.theme.MucGiayColors
+import vhn.dev.study_chines.update.AppUpdateManager
+import vhn.dev.study_chines.update.AppUpdateState
+import vhn.dev.study_chines.update.UpdateCheckResult
+import vhn.dev.study_chines.update.UpdateDialog
+import vhn.dev.study_chines.update.UpdateInfo
 import java.io.File
 import java.io.FileOutputStream
 
@@ -145,12 +153,19 @@ class SettingsViewModel(val preferences: UserPreferences) : ViewModel() {
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val soundManager = remember {
         SoundManager(context, viewModel.preferences).apply {
             loadDefault(R.raw.correct, R.raw.wrong, R.raw.finish)
         }
     }
     val speechManager = remember { ChineseSpeechManager(context, viewModel.preferences) }
+
+    val updateManager = remember { AppUpdateManager(context) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    var availableUpdate by remember { mutableStateOf<UpdateInfo?>(null) }
+    var updateState by remember { mutableStateOf<AppUpdateState>(AppUpdateState.Idle) }
+    var hasInstallPermission by remember { mutableStateOf(updateManager.canRequestPackageInstalls()) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -339,8 +354,157 @@ fun SettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit) {
                 onTest = { soundManager.play(R.raw.finish, forcePlay = true) }
             )
 
+            Spacer(Modifier.height(24.dp))
+
+            // ===== 5. THÔNG TIN ỨNG DỤNG & CẬP NHẬT =====
+            Text(
+                "THÔNG TIN ỨNG DỤNG",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MucGiayColors.InkFaint,
+                letterSpacing = 1.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = MucGiayColors.PaperDeep,
+                border = BorderStroke(1.dp, MucGiayColors.Hairline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(MucGiayColors.JadeTint)
+                                    .border(1.dp, MucGiayColors.Jade.copy(alpha = 0.3f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("汉", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MucGiayColors.Jade)
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text("Hanzi Quiz", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MucGiayColors.Ink)
+                                Text(
+                                    "Phiên bản: v${updateManager.currentVersionName} (Build ${updateManager.currentVersionCode})",
+                                    fontSize = 12.sp,
+                                    color = MucGiayColors.InkSoft
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    Button(
+                        onClick = {
+                            if (!isCheckingUpdate) {
+                                isCheckingUpdate = true
+                                coroutineScope.launch {
+                                    val result = updateManager.checkForUpdate()
+                                    isCheckingUpdate = false
+                                    when (result) {
+                                        is UpdateCheckResult.UpdateAvailable -> {
+                                            availableUpdate = result.info
+                                            updateState = AppUpdateState.Available(result.info)
+                                        }
+                                        is UpdateCheckResult.UpToDate -> {
+                                            Toast.makeText(
+                                                context,
+                                                "Bạn đang dùng phiên bản mới nhất (v${updateManager.currentVersionName})",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        is UpdateCheckResult.Error -> {
+                                            Toast.makeText(
+                                                context,
+                                                "Không thể kiểm tra: ${result.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MucGiayColors.Jade
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = !isCheckingUpdate
+                    ) {
+                        if (isCheckingUpdate) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Đang kiểm tra...", fontSize = 13.sp)
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Kiểm tra bản cập nhật mới", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
+
             Spacer(Modifier.height(32.dp))
         }
+    }
+
+    if (availableUpdate != null) {
+        UpdateDialog(
+            updateInfo = availableUpdate!!,
+            currentVersion = updateManager.currentVersionName,
+            state = updateState,
+            onDismiss = {
+                availableUpdate = null
+                updateState = AppUpdateState.Idle
+            },
+            onStartDownload = {
+                val info = availableUpdate ?: return@UpdateDialog
+                coroutineScope.launch {
+                    updateState = AppUpdateState.Downloading(0, 0, info.fileSize)
+                    val downloadResult = updateManager.downloadApk(
+                        downloadUrl = info.downloadUrl,
+                        targetVersion = info.versionName,
+                        onProgress = { percent, downloaded, total ->
+                            updateState = AppUpdateState.Downloading(percent, downloaded, total)
+                        }
+                    )
+                    downloadResult.onSuccess { file ->
+                        updateState = AppUpdateState.ReadyToInstall(info, file)
+                        hasInstallPermission = updateManager.canRequestPackageInstalls()
+                        if (hasInstallPermission) {
+                            updateManager.installApk(file)
+                        }
+                    }.onFailure { error ->
+                        updateState = AppUpdateState.Error(error.localizedMessage ?: "Tải bản cập nhật thất bại")
+                    }
+                }
+            },
+            onInstall = { file ->
+                hasInstallPermission = updateManager.canRequestPackageInstalls()
+                if (hasInstallPermission) {
+                    updateManager.installApk(file)
+                } else {
+                    updateManager.openInstallPermissionSettings()
+                }
+            },
+            onRequestPermission = {
+                updateManager.openInstallPermissionSettings()
+            },
+            hasInstallPermission = hasInstallPermission
+        )
     }
 }
 

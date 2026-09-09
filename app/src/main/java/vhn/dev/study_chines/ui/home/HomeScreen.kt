@@ -26,9 +26,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import vhn.dev.study_chines.data.remote.SessionDto
 import vhn.dev.study_chines.ui.theme.MucGiayColors
+import vhn.dev.study_chines.update.AppUpdateManager
+import vhn.dev.study_chines.update.AppUpdateState
+import vhn.dev.study_chines.update.UpdateCheckResult
+import vhn.dev.study_chines.update.UpdateDialog
+import vhn.dev.study_chines.update.UpdateInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +47,21 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val updateManager = remember { AppUpdateManager(context) }
+    var availableUpdate by remember { mutableStateOf<UpdateInfo?>(null) }
+    var updateState by remember { mutableStateOf<AppUpdateState>(AppUpdateState.Idle) }
+    var hasInstallPermission by remember { mutableStateOf(updateManager.canRequestPackageInstalls()) }
+
+    // Tự động kiểm tra bản cập nhật mới khi mở HomeScreen
+    LaunchedEffect(Unit) {
+        val result = updateManager.checkForUpdate()
+        if (result is UpdateCheckResult.UpdateAvailable) {
+            availableUpdate = result.info
+            updateState = AppUpdateState.Available(result.info)
+        }
+    }
 
     val pullToRefreshState = rememberPullToRefreshState()
     if (pullToRefreshState.isRefreshing) {
@@ -182,6 +204,52 @@ fun HomeScreen(
                 contentColor = MucGiayColors.SealSon
             )
         }
+    }
+
+    if (availableUpdate != null) {
+        UpdateDialog(
+            updateInfo = availableUpdate!!,
+            currentVersion = updateManager.currentVersionName,
+            state = updateState,
+            onDismiss = {
+                availableUpdate = null
+                updateState = AppUpdateState.Idle
+            },
+            onStartDownload = {
+                val info = availableUpdate ?: return@UpdateDialog
+                coroutineScope.launch {
+                    updateState = AppUpdateState.Downloading(0, 0, info.fileSize)
+                    val downloadResult = updateManager.downloadApk(
+                        downloadUrl = info.downloadUrl,
+                        targetVersion = info.versionName,
+                        onProgress = { percent, downloaded, total ->
+                            updateState = AppUpdateState.Downloading(percent, downloaded, total)
+                        }
+                    )
+                    downloadResult.onSuccess { file ->
+                        updateState = AppUpdateState.ReadyToInstall(info, file)
+                        hasInstallPermission = updateManager.canRequestPackageInstalls()
+                        if (hasInstallPermission) {
+                            updateManager.installApk(file)
+                        }
+                    }.onFailure { error ->
+                        updateState = AppUpdateState.Error(error.localizedMessage ?: "Tải bản cập nhật thất bại")
+                    }
+                }
+            },
+            onInstall = { file ->
+                hasInstallPermission = updateManager.canRequestPackageInstalls()
+                if (hasInstallPermission) {
+                    updateManager.installApk(file)
+                } else {
+                    updateManager.openInstallPermissionSettings()
+                }
+            },
+            onRequestPermission = {
+                updateManager.openInstallPermissionSettings()
+            },
+            hasInstallPermission = hasInstallPermission
+        )
     }
 }
 
