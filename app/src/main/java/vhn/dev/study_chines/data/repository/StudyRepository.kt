@@ -58,4 +58,11 @@ open class StudyRepository(private val dataSource: SupabaseDataSource) {
 
     open suspend fun getRandomMeaningDistractors(excludeId: Int, sessionId: Int, limit: Int = 3): List<String> =
         dataSource.getRandomMeaningDistractors(excludeId, sessionId, limit)
+
+    // === Grammar ===
+    open suspend fun getGrammarPoints(sessionId: Long?, hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.GrammarPoint> =
+        dataSource.getGrammarPoints(sessionId, hskLevel, lessonNum)
+
+    open suspend fun getAllGrammarLessons(hskLevel: Int): List<vhn.dev.study_chines.data.model.LessonItem> =
+        dataSource.getAllGrammarLessons(hskLevel)
 }

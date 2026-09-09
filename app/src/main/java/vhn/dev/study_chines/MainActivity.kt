@@ -26,6 +26,8 @@ import vhn.dev.study_chines.ui.settings.SettingsScreen
 import vhn.dev.study_chines.ui.settings.SettingsViewModel
 import vhn.dev.study_chines.ui.write_pinyin.WritePinyinScreen
 import vhn.dev.study_chines.ui.write_pinyin.WritePinyinViewModel
+import vhn.dev.study_chines.ui.grammar.GrammarScreen
+import vhn.dev.study_chines.ui.grammar.GrammarViewModel
 import vhn.dev.study_chines.ui.theme.HanziQuizTheme
 
 class MainActivity : ComponentActivity() {
@@ -63,6 +65,10 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
                     vm.saveLastSession(id)
                     navController.navigate("write_pinyin/$id")
                 },
+                onNavigateToGrammar = { id ->
+                    vm.saveLastSession(id)
+                    navController.navigate("grammar/$id")
+                },
                 onNavigateToSettings = {
                     navController.navigate("settings")
                 }
@@ -87,6 +93,14 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
             val sessionId = backStackEntry.arguments?.getInt("sessionId") ?: 0
             val vm: WritePinyinViewModel = viewModel(factory = vmFactory { WritePinyinViewModel(repository, sessionId) })
             WritePinyinScreen(viewModel = vm, preferences = preferences, onNavigateBack = { navController.popBackStack() })
+        }
+        composable(
+            route = "grammar/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getLong("sessionId") ?: 0L
+            val vm: GrammarViewModel = viewModel(factory = vmFactory { GrammarViewModel(repository, sessionId) })
+            GrammarScreen(viewModel = vm, preferences = preferences, onNavigateBack = { navController.popBackStack() })
         }
     }
 }

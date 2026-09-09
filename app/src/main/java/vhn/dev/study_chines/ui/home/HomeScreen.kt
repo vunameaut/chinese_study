@@ -36,6 +36,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToQuiz: (sessionId: Long) -> Unit,
     onNavigateToWritePinyin: (sessionId: Long) -> Unit,
+    onNavigateToGrammar: (sessionId: Long) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -152,7 +153,8 @@ fun HomeScreen(
                                 session = lastSession,
                                 ordinal = uiState.sessions.indexOf(lastSession) + 1,
                                 onSelectSession = { onNavigateToQuiz(lastSession.id.toLong()) },
-                                onWritePinyin = { onNavigateToWritePinyin(lastSession.id.toLong()) }
+                                onWritePinyin = { onNavigateToWritePinyin(lastSession.id.toLong()) },
+                                onGrammar = { onNavigateToGrammar(lastSession.id.toLong()) }
                             )
                             Spacer(Modifier.height(20.dp))
                         }
@@ -164,7 +166,8 @@ fun HomeScreen(
                         SessionList(
                             sessions = filteredSessions,
                             onSelectSession = onNavigateToQuiz,
-                            onWritePinyin = onNavigateToWritePinyin
+                            onWritePinyin = onNavigateToWritePinyin,
+                            onGrammar = onNavigateToGrammar
                         )
                     }
                 }
@@ -205,7 +208,8 @@ private fun EmptyHomeState() {
 private fun SessionList(
     sessions: List<SessionDto>,
     onSelectSession: (Long) -> Unit,
-    onWritePinyin: (Long) -> Unit
+    onWritePinyin: (Long) -> Unit,
+    onGrammar: (Long) -> Unit
 ) {
     Text(
         "CÁC BUỔI ÔN TẬP",
@@ -219,7 +223,8 @@ private fun SessionList(
             session = session,
             ordinal = index + 1,
             onSelectSession = { onSelectSession(session.id.toLong()) },
-            onWritePinyin = { onWritePinyin(session.id.toLong()) }
+            onWritePinyin = { onWritePinyin(session.id.toLong()) },
+            onGrammar = { onGrammar(session.id.toLong()) }
         )
         Spacer(Modifier.height(12.dp))
     }
@@ -230,7 +235,8 @@ private fun SessionCard(
     session: SessionDto,
     ordinal: Int,
     onSelectSession: () -> Unit,
-    onWritePinyin: () -> Unit
+    onWritePinyin: () -> Unit,
+    onGrammar: () -> Unit
 ) {
     val ordinals = listOf('壹','贰','叁','肆','伍','陆','柒','捌','玖','拾')
     val date = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(
@@ -297,18 +303,42 @@ private fun SessionCard(
             HorizontalDivider(color = MucGiayColors.Hairline.copy(alpha = 0.7f), thickness = 0.8.dp)
             Spacer(Modifier.height(12.dp))
 
-            // Action Buttons Row: 2 balanced, polished action buttons
+            // Action Buttons: 3 nút đồng bộ với bản Web (Ngữ pháp, Viết Pinyin, Ôn tập ngay)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Nút Viết Pinyin (Phong cách Thư Pháp / Bút Lông Mực Giấy)
+                // Nút Ngữ pháp (Màu Ngọc Bích Jade)
+                Surface(
+                    onClick = onGrammar,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(42.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MucGiayColors.JadeTint,
+                    border = BorderStroke(1.2.dp, MucGiayColors.Jade.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "📖 Ngữ pháp",
+                            fontWeight = FontWeight.SemiBold,
+                            color = MucGiayColors.Jade,
+                            fontSize = 12.5.sp
+                        )
+                    }
+                }
+
+                // Nút Viết Pinyin (Màu Hổ Phách Amber)
                 Surface(
                     onClick = onWritePinyin,
                     modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp),
+                        .weight(0.95f)
+                        .height(42.dp),
                     shape = RoundedCornerShape(10.dp),
                     color = MucGiayColors.AmberTint,
                     border = BorderStroke(1.2.dp, MucGiayColors.Amber.copy(alpha = 0.5f))
@@ -319,20 +349,20 @@ private fun SessionCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "✏  Viết Pinyin",
+                            "✍ Pinyin",
                             fontWeight = FontWeight.SemiBold,
                             color = MucGiayColors.Amber,
-                            fontSize = 13.5.sp
+                            fontSize = 12.5.sp
                         )
                     }
                 }
 
-                // Nút Ôn tập ngay (Trắc nghiệm Cổ Phong - Đỏ Son)
+                // Nút Ôn tập ngay (Màu Đỏ Son SealSon)
                 Surface(
                     onClick = onSelectSession,
                     modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp),
+                        .weight(1.1f)
+                        .height(42.dp),
                     shape = RoundedCornerShape(10.dp),
                     color = MucGiayColors.SealSon
                 ) {
@@ -344,8 +374,8 @@ private fun SessionCard(
                         Text(
                             "Ôn tập ngay",
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            fontSize = 13.5.sp
+                            color = androidx.compose.ui.graphics.Color.White,
+                            fontSize = 12.5.sp
                         )
                     }
                 }

@@ -140,4 +140,47 @@ class SupabaseDataSource {
             emptyList()
         }
     }
+
+    // === Grammar ===
+    suspend fun getGrammarPoints(sessionId: Long?, hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.GrammarPoint> = withContext(Dispatchers.IO) {
+        try {
+            if (sessionId != null && sessionId > 0) {
+                val custom = client.postgrest.from("grammar")
+                    .select { eq("session_id", sessionId) }
+                    .decodeList<vhn.dev.study_chines.data.model.GrammarPoint>()
+                if (custom.isNotEmpty()) return@withContext custom.sortedBy { it.orderIndex }
+            }
+            val list = client.postgrest.from("grammar")
+                .select {
+                    eq("hsk_level", hskLevel)
+                    eq("lesson_num", lessonNum)
+                }
+                .decodeList<vhn.dev.study_chines.data.model.GrammarPoint>()
+            list.sortedBy { it.orderIndex }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching grammar points: hsk=$hskLevel, lesson=$lessonNum", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getAllGrammarLessons(hskLevel: Int): List<vhn.dev.study_chines.data.model.LessonItem> = withContext(Dispatchers.IO) {
+        try {
+            val list = client.postgrest.from("grammar")
+                .select {
+                    eq("hsk_level", hskLevel)
+                }
+                .decodeList<vhn.dev.study_chines.data.model.GrammarPoint>()
+            val sorted = list.sortedBy { it.lessonNum }
+            val map = linkedMapOf<Int, String>()
+            sorted.forEach { p ->
+                if (!map.containsKey(p.lessonNum)) {
+                    map[p.lessonNum] = p.lessonTitle ?: "Bài ${p.lessonNum}"
+                }
+            }
+            map.map { vhn.dev.study_chines.data.model.LessonItem(hskLevel, it.key, it.value) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching grammar lessons", e)
+            emptyList()
+        }
+    }
 }
