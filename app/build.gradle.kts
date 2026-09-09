@@ -32,12 +32,21 @@ android {
         buildConfigField(
             "String",
             "SUPABASE_ANON_KEY",
-            "\"${localProperties.getProperty("supabase.anon.key") ?: project.findProperty("supabase.anon.key") ?: ""}\""
+            "\"${localProperties.getProperty("supabase.anon.key") ?: project.findProperty("supabase.anon.key") ?: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0aHVvbWlmdXp5cnpoZ2NzZWR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNjEyNTUsImV4cCI6MjEwMjczNzI1NX0.47yUgABy8oaXYsMNYCC5UPqBkQVORJvf5VDa6wnBlwo"}\""
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            val projectKeystore = file("debug.keystore")
+            if (projectKeystore.exists()) {
+                storeFile = projectKeystore
+            }
         }
     }
 
