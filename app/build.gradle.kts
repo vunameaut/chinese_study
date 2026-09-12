@@ -17,12 +17,16 @@ android {
     namespace = "vhn.dev.study_chines"
     compileSdk = 35
 
+    val appVersionName = (project.findProperty("versionName") as? String)
+        ?.removePrefix("v")?.trim() ?: "2.1"
+    val appVersionCode = (project.findProperty("versionCode") as? String)?.toIntOrNull() ?: 3
+
     defaultConfig {
         applicationId = "vhn.dev.study_chines"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         buildConfigField(
             "String",
