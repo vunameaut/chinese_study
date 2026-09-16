@@ -1,4 +1,4 @@
-﻿package vhn.dev.study_chines.data.repository
+package vhn.dev.study_chines.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -58,6 +58,13 @@ open class StudyRepository(private val dataSource: SupabaseDataSource) {
 
     open suspend fun getRandomMeaningDistractors(excludeId: Int, sessionId: Int, limit: Int = 3): List<String> =
         dataSource.getRandomMeaningDistractors(excludeId, sessionId, limit)
+
+    // === Classifiers (Lượng từ) ===
+    open suspend fun getClassifiers(hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.ClassifierPoint> =
+        dataSource.getClassifiers(hskLevel, lessonNum)
+
+    open suspend fun getAllClassifierLessons(hskLevel: Int): List<vhn.dev.study_chines.data.model.ClassifierLessonItem> =
+        dataSource.getAllClassifierLessons(hskLevel)
 
     // === Grammar ===
     open suspend fun getGrammarPoints(sessionId: Long?, hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.GrammarPoint> =

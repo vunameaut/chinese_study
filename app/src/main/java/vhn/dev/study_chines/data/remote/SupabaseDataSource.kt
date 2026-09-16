@@ -141,6 +141,49 @@ class SupabaseDataSource {
         }
     }
 
+    // === Classifiers (Lượng từ) ===
+    suspend fun getClassifiers(hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.ClassifierPoint> = withContext(Dispatchers.IO) {
+        try {
+            val list = client.postgrest.from("classifiers")
+                .select {
+                    eq("hsk_level", hskLevel)
+                    eq("lesson_num", lessonNum)
+                }
+                .decodeList<vhn.dev.study_chines.data.model.ClassifierPoint>()
+            list.sortedBy { it.orderIndex }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching classifiers: hsk=$hskLevel, lesson=$lessonNum", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getAllClassifierLessons(hskLevel: Int): List<vhn.dev.study_chines.data.model.ClassifierLessonItem> = withContext(Dispatchers.IO) {
+        try {
+            val list = client.postgrest.from("classifiers")
+                .select {
+                    eq("hsk_level", hskLevel)
+                }
+                .decodeList<vhn.dev.study_chines.data.model.ClassifierPoint>()
+            val grouped = list.groupBy { it.lessonNum }
+            grouped.keys.sorted().map { lessonNum ->
+                val items = grouped[lessonNum] ?: emptyList()
+                val title = items.firstOrNull()?.lessonTitle ?: "Bài $lessonNum"
+                val classifiers = items.map { "${it.classifier} ${it.pinyin}" }
+                val collocations = items.flatMap { it.collocations.map { c -> c.phrase.ifEmpty { "${it.classifier} ${c.noun}" } } }.take(4)
+                vhn.dev.study_chines.data.model.ClassifierLessonItem(
+                    hskLevel = hskLevel,
+                    lessonNum = lessonNum,
+                    title = title,
+                    classifiers = classifiers,
+                    previewCollocations = collocations
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching classifier lessons for hsk: $hskLevel", e)
+            emptyList()
+        }
+    }
+
     // === Grammar ===
     suspend fun getGrammarPoints(sessionId: Long?, hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.GrammarPoint> = withContext(Dispatchers.IO) {
         try {

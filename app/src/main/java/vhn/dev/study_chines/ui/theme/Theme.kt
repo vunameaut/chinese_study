@@ -1,4 +1,4 @@
-﻿package vhn.dev.study_chines.ui.theme
+package vhn.dev.study_chines.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
@@ -127,4 +127,9 @@ object MucGiayColors {
     val Slate = Slate_
     val SlateTint = SlateTint_
     val RedBg = RedBg_
+    val Indigo = Color(0xFF4F46E5)
+    val IndigoFill = Color(0xFF4338CA)
+    val IndigoTint = Color(0xFFEEF2FF)
+    val Purple = Color(0xFF7C3AED)
+    val PurpleTint = Color(0xFFF3E8FF)
 }

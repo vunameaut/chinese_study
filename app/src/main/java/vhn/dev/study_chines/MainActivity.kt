@@ -28,6 +28,8 @@ import vhn.dev.study_chines.ui.write_pinyin.WritePinyinScreen
 import vhn.dev.study_chines.ui.write_pinyin.WritePinyinViewModel
 import vhn.dev.study_chines.ui.grammar.GrammarScreen
 import vhn.dev.study_chines.ui.grammar.GrammarViewModel
+import vhn.dev.study_chines.ui.classifier.ClassifierScreen
+import vhn.dev.study_chines.ui.classifier.ClassifierViewModel
 import vhn.dev.study_chines.ui.theme.HanziQuizTheme
 
 class MainActivity : ComponentActivity() {
@@ -69,6 +71,9 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
                     vm.saveLastSession(id)
                     navController.navigate("grammar/$id")
                 },
+                onNavigateToClassifier = { hsk, lesson ->
+                    navController.navigate("classifier/$hsk/$lesson")
+                },
                 onNavigateToSettings = {
                     navController.navigate("settings")
                 }
@@ -101,6 +106,18 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
             val sessionId = backStackEntry.arguments?.getLong("sessionId") ?: 0L
             val vm: GrammarViewModel = viewModel(factory = vmFactory { GrammarViewModel(repository, sessionId) })
             GrammarScreen(viewModel = vm, preferences = preferences, onNavigateBack = { navController.popBackStack() })
+        }
+        composable(
+            route = "classifier/{hskLevel}/{lessonNum}",
+            arguments = listOf(
+                navArgument("hskLevel") { type = NavType.IntType },
+                navArgument("lessonNum") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val hskLevel = backStackEntry.arguments?.getInt("hskLevel") ?: 1
+            val lessonNum = backStackEntry.arguments?.getInt("lessonNum") ?: 1
+            val vm: ClassifierViewModel = viewModel(factory = vmFactory { ClassifierViewModel(repository, hskLevel, lessonNum) })
+            ClassifierScreen(viewModel = vm, preferences = preferences, onNavigateBack = { navController.popBackStack() })
         }
     }
 }

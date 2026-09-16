@@ -1,10 +1,11 @@
-﻿package vhn.dev.study_chines.ui.home
+package vhn.dev.study_chines.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import vhn.dev.study_chines.data.local.UserPreferences
+import vhn.dev.study_chines.data.model.ClassifierLessonItem
 import vhn.dev.study_chines.data.remote.SessionDto
 import vhn.dev.study_chines.data.repository.StudyRepository
 
@@ -13,7 +14,10 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val selectedHsk: Int = 1,
-    val lastSessionId: Long = -1L
+    val lastSessionId: Long = -1L,
+    val studyMode: Int = 0, // 0 = Buổi học & Từ vựng, 1 = Lượng từ theo HSK & Bài
+    val classifierLessons: List<ClassifierLessonItem> = emptyList(),
+    val isLoadingClassifiers: Boolean = false
 )
 
 class HomeViewModel(
@@ -29,6 +33,7 @@ class HomeViewModel(
                 _uiState.value = _uiState.value.copy(sessions = sessions, isLoading = false, error = null)
             }
         }
+        loadClassifierLessons(_uiState.value.selectedHsk)
     }
 
     val hskLevels = listOf(1, 2, 3, 4, 5, 6)
@@ -36,6 +41,25 @@ class HomeViewModel(
     fun selectHsk(level: Int) {
         preferences.lastHsk = level
         _uiState.value = _uiState.value.copy(selectedHsk = level)
+        loadClassifierLessons(level)
+    }
+
+    fun switchStudyMode(mode: Int) {
+        _uiState.value = _uiState.value.copy(studyMode = mode)
+        if (mode == 1 && _uiState.value.classifierLessons.isEmpty()) {
+            loadClassifierLessons(_uiState.value.selectedHsk)
+        }
+    }
+
+    fun loadClassifierLessons(hskLevel: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingClassifiers = true)
+            val lessons = repository.getAllClassifierLessons(hskLevel)
+            _uiState.value = _uiState.value.copy(
+                classifierLessons = lessons,
+                isLoadingClassifiers = false
+            )
+        }
     }
 
     fun saveLastSession(sessionId: Long) {
@@ -68,6 +92,7 @@ class HomeViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             repository.refresh()
+            loadClassifierLessons(_uiState.value.selectedHsk)
         }
     }
 }

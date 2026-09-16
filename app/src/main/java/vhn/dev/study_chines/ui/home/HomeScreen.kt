@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import vhn.dev.study_chines.data.model.ClassifierLessonItem
 import vhn.dev.study_chines.data.remote.SessionDto
 import vhn.dev.study_chines.ui.theme.MucGiayColors
 import vhn.dev.study_chines.update.AppUpdateManager
@@ -44,6 +45,7 @@ fun HomeScreen(
     onNavigateToQuiz: (sessionId: Long) -> Unit,
     onNavigateToWritePinyin: (sessionId: Long) -> Unit,
     onNavigateToGrammar: (sessionId: Long) -> Unit,
+    onNavigateToClassifier: (hskLevel: Int, lessonNum: Int) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -156,7 +158,87 @@ fun HomeScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                if (uiState.isLoading && !pullToRefreshState.isRefreshing) {
+                // Thanh chuyển chế độ học (Study Mode Switcher)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MucGiayColors.PaperDeep)
+                        .border(1.dp, MucGiayColors.Hairline, RoundedCornerShape(12.dp))
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val isSessions = uiState.studyMode == 0
+                    Surface(
+                        onClick = { viewModel.switchStudyMode(0) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(9.dp),
+                        color = if (isSessions) MucGiayColors.Paper else Color.Transparent,
+                        border = if (isSessions) BorderStroke(1.dp, MucGiayColors.Hairline) else null,
+                        shadowElevation = if (isSessions) 1.dp else 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("📚", fontSize = 14.sp)
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "Buổi học (${filteredSessions.size})",
+                                fontSize = 13.sp,
+                                fontWeight = if (isSessions) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSessions) MucGiayColors.Ink else MucGiayColors.InkSoft
+                            )
+                        }
+                    }
+
+                    val isClassifiers = uiState.studyMode == 1
+                    Surface(
+                        onClick = { viewModel.switchStudyMode(1) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(9.dp),
+                        color = if (isClassifiers) MucGiayColors.IndigoTint else Color.Transparent,
+                        border = if (isClassifiers) BorderStroke(1.2.dp, MucGiayColors.Indigo.copy(alpha = 0.6f)) else null,
+                        shadowElevation = if (isClassifiers) 1.dp else 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("🏷️", fontSize = 14.sp)
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "Lượng từ (${uiState.classifierLessons.size})",
+                                fontSize = 13.sp,
+                                fontWeight = if (isClassifiers) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isClassifiers) MucGiayColors.Indigo else MucGiayColors.InkSoft
+                            )
+                        }
+                    }
+                }
+
+                if (uiState.studyMode == 1) {
+                    // Chế độ: Lượng từ theo HSK & Bài
+                    if (uiState.isLoadingClassifiers && !pullToRefreshState.isRefreshing) {
+                        Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MucGiayColors.Indigo)
+                        }
+                    } else if (uiState.classifierLessons.isEmpty()) {
+                        EmptyClassifierState(uiState.selectedHsk)
+                    } else {
+                        ClassifierLessonList(
+                            lessons = uiState.classifierLessons,
+                            hskLevel = uiState.selectedHsk,
+                            onNavigateToClassifier = onNavigateToClassifier
+                        )
+                    }
+                } else if (uiState.isLoading && !pullToRefreshState.isRefreshing) {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = MucGiayColors.JadeFill)
                     }
@@ -454,3 +536,170 @@ private fun SessionCard(
 
 @Composable
 private fun spToEm(value: Float): androidx.compose.ui.unit.TextUnit = value.sp
+
+@Composable
+private fun EmptyClassifierState(hskLevel: Int) {
+    Column(
+        Modifier.fillMaxWidth().padding(top = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("🏷️", fontSize = 36.sp)
+        Spacer(Modifier.height(10.dp))
+        Text(
+            "Chưa có lượng từ cho HSK $hskLevel",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MucGiayColors.InkSoft
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Hiện hệ thống đang cập nhật lượng từ cho cấp độ này",
+            color = MucGiayColors.InkFaint, fontSize = 14.sp
+        )
+    }
+}
+
+@Composable
+private fun ClassifierLessonList(
+    lessons: List<ClassifierLessonItem>,
+    hskLevel: Int,
+    onNavigateToClassifier: (hskLevel: Int, lessonNum: Int) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            "LƯỢNG TỪ THEO BÀI HỌC (HSK $hskLevel)",
+            style = MaterialTheme.typography.labelSmall,
+            color = MucGiayColors.Indigo,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = spToEm(0.06f)
+        )
+        Text(
+            "${lessons.size} bài học",
+            fontSize = 12.sp,
+            color = MucGiayColors.InkFaint
+        )
+    }
+    Spacer(Modifier.height(12.dp))
+
+    lessons.forEach { lesson ->
+        ClassifierLessonCard(
+            lesson = lesson,
+            onStartStudy = { onNavigateToClassifier(lesson.hskLevel, lesson.lessonNum) }
+        )
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun ClassifierLessonCard(
+    lesson: ClassifierLessonItem,
+    onStartStudy: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.2.dp, MucGiayColors.Indigo.copy(alpha = 0.25f), RoundedCornerShape(14.dp)),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            // Header: Lesson Num & Title
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MucGiayColors.IndigoTint,
+                        border = BorderStroke(1.dp, MucGiayColors.Indigo.copy(alpha = 0.4f))
+                    ) {
+                        Text(
+                            "Bài ${lesson.lessonNum}",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MucGiayColors.Indigo,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        lesson.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MucGiayColors.Ink
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Badges of Classifiers in this lesson
+            if (lesson.classifiers.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    lesson.classifiers.forEach { cl ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MucGiayColors.Paper,
+                            border = BorderStroke(0.8.dp, MucGiayColors.Hairline)
+                        ) {
+                            Text(
+                                "[ $cl ]",
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MucGiayColors.Indigo,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+            }
+
+            // Preview Collocations
+            if (lesson.previewCollocations.isNotEmpty()) {
+                Text(
+                    "Cụm từ mẫu: ${lesson.previewCollocations.joinToString(" • ")}",
+                    fontSize = 12.sp,
+                    color = MucGiayColors.InkSoft,
+                    maxLines = 1
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            // Direct Action Button
+            Surface(
+                onClick = onStartStudy,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = MucGiayColors.Indigo
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Học lượng từ bài này ➔",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+    }
+}
