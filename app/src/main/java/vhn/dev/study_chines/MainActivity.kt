@@ -108,15 +108,17 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
             GrammarScreen(viewModel = vm, preferences = preferences, onNavigateBack = { navController.popBackStack() })
         }
         composable(
-            route = "classifier/{hskLevel}/{lessonNum}",
+            route = "classifier/{hskLevel}/{lessonNum}?sessionId={sessionId}",
             arguments = listOf(
                 navArgument("hskLevel") { type = NavType.IntType },
-                navArgument("lessonNum") { type = NavType.IntType }
+                navArgument("lessonNum") { type = NavType.IntType },
+                navArgument("sessionId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val hskLevel = backStackEntry.arguments?.getInt("hskLevel") ?: 1
             val lessonNum = backStackEntry.arguments?.getInt("lessonNum") ?: 1
-            val vm: ClassifierViewModel = viewModel(factory = vmFactory { ClassifierViewModel(repository, hskLevel, lessonNum) })
+            val sessionId = backStackEntry.arguments?.getLong("sessionId")?.takeIf { it > 0 }
+            val vm: ClassifierViewModel = viewModel(factory = vmFactory { ClassifierViewModel(repository, hskLevel, lessonNum, sessionId) })
             ClassifierScreen(viewModel = vm, preferences = preferences, onNavigateBack = { navController.popBackStack() })
         }
     }

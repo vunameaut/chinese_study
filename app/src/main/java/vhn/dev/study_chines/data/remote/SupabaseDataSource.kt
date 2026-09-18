@@ -142,8 +142,14 @@ class SupabaseDataSource {
     }
 
     // === Classifiers (Lượng từ) ===
-    suspend fun getClassifiers(hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.ClassifierPoint> = withContext(Dispatchers.IO) {
+    suspend fun getClassifiers(hskLevel: Int, lessonNum: Int, sessionId: Long? = null): List<vhn.dev.study_chines.data.model.ClassifierPoint> = withContext(Dispatchers.IO) {
         try {
+            if (sessionId != null && sessionId > 0) {
+                val custom = client.postgrest.from("classifiers")
+                    .select { eq("session_id", sessionId) }
+                    .decodeList<vhn.dev.study_chines.data.model.ClassifierPoint>()
+                if (custom.isNotEmpty()) return@withContext custom.sortedBy { it.orderIndex }
+            }
             val list = client.postgrest.from("classifiers")
                 .select {
                     eq("hsk_level", hskLevel)
@@ -152,7 +158,7 @@ class SupabaseDataSource {
                 .decodeList<vhn.dev.study_chines.data.model.ClassifierPoint>()
             list.sortedBy { it.orderIndex }
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching classifiers: hsk=$hskLevel, lesson=$lessonNum", e)
+            Log.e(TAG, "Error fetching classifiers: sessionId=$sessionId, hsk=$hskLevel, lesson=$lessonNum", e)
             emptyList()
         }
     }
@@ -168,8 +174,8 @@ class SupabaseDataSource {
             grouped.keys.sorted().map { lessonNum ->
                 val items = grouped[lessonNum] ?: emptyList()
                 val title = items.firstOrNull()?.lessonTitle ?: "Bài $lessonNum"
-                val classifiers = items.map { "${it.classifier} ${it.pinyin}" }
-                val collocations = items.flatMap { it.collocations.map { c -> c.phrase.ifEmpty { "${it.classifier} ${c.noun}" } } }.take(4)
+                val classifiers = items.map { "${it.classifier} ${it.pinyin}".trim() }.filter { it.isNotBlank() }
+                val collocations = items.flatMap { it.collocations.map { c -> c.phrase.ifEmpty { "${it.classifier} ${c.noun}".trim() } } }.take(4)
                 vhn.dev.study_chines.data.model.ClassifierLessonItem(
                     hskLevel = hskLevel,
                     lessonNum = lessonNum,

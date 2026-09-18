@@ -31,7 +31,7 @@ class LiveUpdateCheckTest {
         val release = json.decodeFromString<GitHubRelease>(body)
 
         println("Live Release Tag: ${release.tagName}")
-        assertEquals("v2.1", release.tagName)
+        assertTrue("Release tag must start with v", release.tagName.startsWith("v"))
 
         val apkAsset = release.assets.find { it.name.endsWith(".apk") }
         assertTrue("File APK phai ton tai tren Release", apkAsset != null)

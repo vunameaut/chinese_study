@@ -26,6 +26,7 @@ data class ClassifierExercise(
     val answer: String = "",
     val pinyin: String = "",
     val meaning: String = "",
+    @SerialName("explain")
     val explanation: String = ""
 )
 
@@ -40,6 +41,7 @@ data class ClassifierPoint(
     val lessonNum: Int = 1,
     @SerialName("lesson_title")
     val lessonTitle: String? = null,
+    @SerialName("hanzi")
     val classifier: String = "",
     val pinyin: String = "",
     val meaning: String = "",
@@ -52,7 +54,9 @@ data class ClassifierPoint(
     val orderIndex: Int = 1,
     @SerialName("created_at")
     val createdAt: String = ""
-)
+) {
+    val hanzi: String get() = classifier
+}
 
 data class ClassifierLessonItem(
     val hskLevel: Int,

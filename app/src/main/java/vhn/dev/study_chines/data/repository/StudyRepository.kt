@@ -60,8 +60,8 @@ open class StudyRepository(private val dataSource: SupabaseDataSource) {
         dataSource.getRandomMeaningDistractors(excludeId, sessionId, limit)
 
     // === Classifiers (Lượng từ) ===
-    open suspend fun getClassifiers(hskLevel: Int, lessonNum: Int): List<vhn.dev.study_chines.data.model.ClassifierPoint> =
-        dataSource.getClassifiers(hskLevel, lessonNum)
+    open suspend fun getClassifiers(hskLevel: Int, lessonNum: Int, sessionId: Long? = null): List<vhn.dev.study_chines.data.model.ClassifierPoint> =
+        dataSource.getClassifiers(hskLevel, lessonNum, sessionId)
 
     open suspend fun getAllClassifierLessons(hskLevel: Int): List<vhn.dev.study_chines.data.model.ClassifierLessonItem> =
         dataSource.getAllClassifierLessons(hskLevel)

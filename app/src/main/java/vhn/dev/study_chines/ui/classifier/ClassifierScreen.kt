@@ -560,7 +560,10 @@ private fun ClassifierPracticeTab(
                         color = MucGiayColors.Ink,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = { onSpeak(currentEx.question.substringAfter(":")) }) {
+                    IconButton(onClick = {
+                        val textToSpeak = currentEx.question.replace(Regex("""\(?\s*___\s*\)?"""), currentEx.answer).substringAfter(":")
+                        onSpeak(if (textToSpeak.isNotBlank()) textToSpeak else currentEx.answer)
+                    }) {
                         Text("🔊", fontSize = 18.sp)
                     }
                 }

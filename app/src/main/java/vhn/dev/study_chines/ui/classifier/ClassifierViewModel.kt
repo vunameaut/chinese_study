@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import vhn.dev.study_chines.data.model.ClassifierExercise
@@ -35,7 +36,8 @@ data class ClassifierUiState(
 class ClassifierViewModel(
     private val repository: StudyRepository,
     initialHskLevel: Int = 1,
-    initialLessonNum: Int = 1
+    initialLessonNum: Int = 1,
+    private val sessionId: Long? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -51,11 +53,29 @@ class ClassifierViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, hskLevel = hsk, lessonNum = lesson) }
             try {
-                val allLessons = repository.getAllClassifierLessons(hsk)
-                val lessonItem = allLessons.find { it.lessonNum == lesson }
-                val title = lessonItem?.title ?: "Bài $lesson"
+                var targetHsk = hsk
+                var targetLesson = lesson
+                var detectedTitle: String? = null
 
-                val list = repository.getClassifiers(hsk, lesson)
+                if (sessionId != null && sessionId > 0) {
+                    val sessions = repository.allSessions.first()
+                    val foundSession = sessions.find { it.id.toLong() == sessionId }
+                    if (foundSession != null) {
+                        targetHsk = foundSession.hskLevel
+                        val title = foundSession.title
+                        val numMatch = Regex("""(?:bài|bai|lesson|b)\s*[:.]?\s*(\d+)""", RegexOption.IGNORE_CASE).find(title)
+                        if (numMatch != null) {
+                            targetLesson = numMatch.groupValues[1].toIntOrNull() ?: lesson
+                        }
+                        detectedTitle = "Bài $targetLesson"
+                    }
+                }
+
+                val allLessons = repository.getAllClassifierLessons(targetHsk)
+                val lessonItem = allLessons.find { it.lessonNum == targetLesson }
+                val title = detectedTitle ?: lessonItem?.title ?: "Bài $targetLesson"
+
+                val list = repository.getClassifiers(targetHsk, targetLesson, sessionId)
 
                 // Tải danh sách bài tập: ưu tiên bài tập cấu hình sẵn từ DB
                 val exList = mutableListOf<ClassifierExercise>()
@@ -96,8 +116,8 @@ class ClassifierViewModel(
                 _uiState.update { current ->
                     current.copy(
                         isLoading = false,
-                        hskLevel = hsk,
-                        lessonNum = lesson,
+                        hskLevel = targetHsk,
+                        lessonNum = targetLesson,
                         lessonTitle = title,
                         classifiers = list,
                         availableLessons = allLessons,
@@ -140,7 +160,8 @@ class ClassifierViewModel(
                 wrongCount = if (!isCorrect) it.wrongCount + 1 else it.wrongCount
             )
         }
-        val speechText = if (currentEx.pinyin.isNotBlank()) currentEx.question.replace("( ___ )", currentEx.answer).substringAfter(":") else currentEx.answer
+        val filledSentence = currentEx.question.replace(Regex("""\(?\s*___\s*\)?"""), currentEx.answer).substringAfter(":")
+        val speechText = if (filledSentence.isNotBlank()) filledSentence else currentEx.answer
         onAnswered(isCorrect, speechText)
     }
 
