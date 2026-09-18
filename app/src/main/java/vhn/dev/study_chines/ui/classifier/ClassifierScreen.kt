@@ -88,7 +88,7 @@ fun ClassifierScreen(
                             Text(
                                 "HSK ${uiState.hskLevel} • Lượng từ chuẩn BLCUP",
                                 fontSize = 11.sp,
-                                color = MucGiayColors.Indigo,
+                                color = MucGiayColors.Amber,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -116,7 +116,7 @@ fun ClassifierScreen(
             TabRow(
                 selectedTabIndex = uiState.selectedTab,
                 containerColor = MucGiayColors.PaperDeep,
-                contentColor = MucGiayColors.Indigo
+                contentColor = MucGiayColors.Amber
             ) {
                 Tab(
                     selected = uiState.selectedTab == 0,
@@ -125,7 +125,7 @@ fun ClassifierScreen(
                         Text(
                             "🏷️ Thẻ Lượng từ (${uiState.classifiers.size})",
                             fontWeight = if (uiState.selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
-                            color = if (uiState.selectedTab == 0) MucGiayColors.Indigo else MucGiayColors.InkSoft
+                            color = if (uiState.selectedTab == 0) MucGiayColors.Amber else MucGiayColors.InkSoft
                         )
                     }
                 )
@@ -136,7 +136,7 @@ fun ClassifierScreen(
                         Text(
                             "✍ Luyện tập (${uiState.exercises.size})",
                             fontWeight = if (uiState.selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
-                            color = if (uiState.selectedTab == 1) MucGiayColors.Indigo else MucGiayColors.InkSoft
+                            color = if (uiState.selectedTab == 1) MucGiayColors.Amber else MucGiayColors.InkSoft
                         )
                     }
                 )
@@ -144,7 +144,7 @@ fun ClassifierScreen(
 
             if (uiState.isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MucGiayColors.Indigo)
+                    CircularProgressIndicator(color = MucGiayColors.Amber)
                 }
             } else if (uiState.selectedTab == 0) {
                 // Tab 0: Thẻ Lượng từ & Danh từ ghép đôi
@@ -203,8 +203,8 @@ fun ClassifierScreen(
                                     viewModel.selectLesson(lessonItem.hskLevel, lessonItem.lessonNum)
                                 },
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isCurrent) MucGiayColors.IndigoTint else MucGiayColors.PaperDeep,
-                            border = if (isCurrent) BorderStroke(1.dp, MucGiayColors.Indigo) else null
+                            color = if (isCurrent) MucGiayColors.AmberTint else MucGiayColors.PaperDeep,
+                            border = if (isCurrent) BorderStroke(1.dp, MucGiayColors.Amber) else null
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
@@ -213,7 +213,7 @@ fun ClassifierScreen(
                                 Text(
                                     "Bài ${lessonItem.lessonNum}",
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isCurrent) MucGiayColors.Indigo else MucGiayColors.Ink,
+                                    color = if (isCurrent) MucGiayColors.Amber else MucGiayColors.Ink,
                                     fontSize = 14.sp
                                 )
                                 Spacer(Modifier.width(8.dp))
@@ -228,7 +228,7 @@ fun ClassifierScreen(
                                     Text(
                                         lessonItem.classifiers.joinToString(" "),
                                         fontSize = 12.sp,
-                                        color = MucGiayColors.Indigo,
+                                        color = MucGiayColors.Amber,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 }
@@ -239,7 +239,7 @@ fun ClassifierScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showLessonDialog = false }) {
-                    Text("Đóng", color = MucGiayColors.Indigo)
+                    Text("Đóng", color = MucGiayColors.Amber)
                 }
             },
             containerColor = MucGiayColors.Paper
@@ -278,7 +278,7 @@ private fun ClassifierDetailCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.2.dp, MucGiayColors.Indigo.copy(alpha = 0.3f), RoundedCornerShape(14.dp)),
+            .border(1.2.dp, MucGiayColors.Amber.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep)
     ) {
@@ -290,7 +290,7 @@ private fun ClassifierDetailCard(
                         .size(64.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(MucGiayColors.Paper)
-                        .border(1.5.dp, MucGiayColors.Indigo.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
+                        .border(1.5.dp, MucGiayColors.Amber.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -298,7 +298,7 @@ private fun ClassifierDetailCard(
                         fontFamily = FontFamily.Serif,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MucGiayColors.Indigo
+                        color = MucGiayColors.Amber
                     )
                 }
 
@@ -323,13 +323,13 @@ private fun ClassifierDetailCard(
                     Spacer(Modifier.height(4.dp))
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = MucGiayColors.IndigoTint
+                        color = MucGiayColors.AmberTint
                     ) {
                         Text(
                             cl.meaning,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MucGiayColors.Indigo,
+                            color = MucGiayColors.Amber,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
@@ -363,7 +363,7 @@ private fun ClassifierDetailCard(
                 Text(
                     "DANH TỪ KẾT HỢP TIÊU BIỂU (BẤM ĐỂ PHÁT ÂM 🔊)",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MucGiayColors.Indigo,
+                    color = MucGiayColors.Amber,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(8.dp))
@@ -491,7 +491,7 @@ private fun ClassifierPracticeTab(
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = onRestart,
-                colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.Indigo),
+                colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.Amber),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth(0.7f).height(46.dp)
             ) {
@@ -520,7 +520,7 @@ private fun ClassifierPracticeTab(
             Text(
                 "CÂU ${uiState.currentExerciseIndex + 1} / ${uiState.exercises.size}",
                 style = MaterialTheme.typography.labelSmall,
-                color = MucGiayColors.Indigo,
+                color = MucGiayColors.Amber,
                 fontWeight = FontWeight.Bold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -533,7 +533,7 @@ private fun ClassifierPracticeTab(
         LinearProgressIndicator(
             progress = { (uiState.currentExerciseIndex + 1).toFloat() / uiState.exercises.size },
             modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-            color = MucGiayColors.Indigo,
+            color = MucGiayColors.Amber,
             trackColor = MucGiayColors.PaperDeep
         )
 
@@ -587,14 +587,14 @@ private fun ClassifierPracticeTab(
             val isCorrectOption = option.trim() == currentEx.answer.trim()
 
             val bgColor = when {
-                !uiState.isAnswered -> if (isSelected) MucGiayColors.IndigoTint else MucGiayColors.PaperDeep
+                !uiState.isAnswered -> if (isSelected) MucGiayColors.AmberTint else MucGiayColors.PaperDeep
                 isCorrectOption -> MucGiayColors.JadeTint
                 isSelected && !isCorrectOption -> MucGiayColors.RedBg
                 else -> MucGiayColors.PaperDeep
             }
 
             val borderColor = when {
-                !uiState.isAnswered -> if (isSelected) MucGiayColors.Indigo else MucGiayColors.Hairline
+                !uiState.isAnswered -> if (isSelected) MucGiayColors.Amber else MucGiayColors.Hairline
                 isCorrectOption -> MucGiayColors.Jade
                 isSelected && !isCorrectOption -> MucGiayColors.SealSon
                 else -> MucGiayColors.Hairline
@@ -681,7 +681,7 @@ private fun ClassifierPracticeTab(
             Button(
                 onClick = onNext,
                 modifier = Modifier.fillMaxWidth().height(46.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.Indigo),
+                colors = ButtonDefaults.buttonColors(containerColor = MucGiayColors.Amber),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(

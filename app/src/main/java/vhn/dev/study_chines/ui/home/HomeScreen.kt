@@ -202,8 +202,8 @@ fun HomeScreen(
                             .weight(1f)
                             .height(44.dp),
                         shape = RoundedCornerShape(9.dp),
-                        color = if (isClassifiers) MucGiayColors.IndigoTint else Color.Transparent,
-                        border = if (isClassifiers) BorderStroke(1.2.dp, MucGiayColors.Indigo.copy(alpha = 0.6f)) else null,
+                        color = if (isClassifiers) MucGiayColors.AmberTint else Color.Transparent,
+                        border = if (isClassifiers) BorderStroke(1.2.dp, MucGiayColors.Amber.copy(alpha = 0.6f)) else null,
                         shadowElevation = if (isClassifiers) 1.dp else 0.dp
                     ) {
                         Row(
@@ -217,7 +217,7 @@ fun HomeScreen(
                                 "Lượng từ (${uiState.classifierLessons.size})",
                                 fontSize = 13.sp,
                                 fontWeight = if (isClassifiers) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isClassifiers) MucGiayColors.Indigo else MucGiayColors.InkSoft
+                                color = if (isClassifiers) MucGiayColors.Amber else MucGiayColors.InkSoft
                             )
                         }
                     }
@@ -227,7 +227,7 @@ fun HomeScreen(
                     // Chế độ: Lượng từ theo HSK & Bài
                     if (uiState.isLoadingClassifiers && !pullToRefreshState.isRefreshing) {
                         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = MucGiayColors.Indigo)
+                            CircularProgressIndicator(color = MucGiayColors.Amber)
                         }
                     } else if (uiState.classifierLessons.isEmpty()) {
                         EmptyClassifierState(uiState.selectedHsk)
@@ -572,7 +572,7 @@ private fun ClassifierLessonList(
         Text(
             "LƯỢNG TỪ THEO BÀI HỌC (HSK $hskLevel)",
             style = MaterialTheme.typography.labelSmall,
-            color = MucGiayColors.Indigo,
+            color = MucGiayColors.Amber,
             fontWeight = FontWeight.Bold,
             letterSpacing = spToEm(0.06f)
         )
@@ -601,7 +601,7 @@ private fun ClassifierLessonCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.2.dp, MucGiayColors.Indigo.copy(alpha = 0.25f), RoundedCornerShape(14.dp)),
+            .border(1.2.dp, MucGiayColors.Amber.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -616,14 +616,14 @@ private fun ClassifierLessonCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = MucGiayColors.IndigoTint,
-                        border = BorderStroke(1.dp, MucGiayColors.Indigo.copy(alpha = 0.4f))
+                        color = MucGiayColors.AmberTint,
+                        border = BorderStroke(1.dp, MucGiayColors.Amber.copy(alpha = 0.45f))
                     ) {
                         Text(
                             "Bài ${lesson.lessonNum}",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MucGiayColors.Indigo,
+                            color = MucGiayColors.Amber,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
@@ -658,7 +658,7 @@ private fun ClassifierLessonCard(
                                 fontFamily = FontFamily.Serif,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MucGiayColors.Indigo,
+                                color = MucGiayColors.Amber,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
@@ -685,7 +685,7 @@ private fun ClassifierLessonCard(
                     .fillMaxWidth()
                     .height(42.dp),
                 shape = RoundedCornerShape(10.dp),
-                color = MucGiayColors.Indigo
+                color = MucGiayColors.Amber
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
