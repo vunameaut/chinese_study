@@ -35,6 +35,7 @@ import vhn.dev.study_chines.ui.theme.HanziQuizTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AIOTracker.init(this, "study_chines", "Study Chinese App")
 
         val preferences = UserPreferences(this)
         val dataSource = SupabaseDataSource()
