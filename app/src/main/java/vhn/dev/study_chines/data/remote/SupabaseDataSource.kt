@@ -122,11 +122,56 @@ class SupabaseDataSource {
             val vocabs = client.postgrest.from("vocabulary")
                 .select { eq("session_id", sessionId) }
                 .decodeList<VocabularyDto>()
-            vocabs.filter { it.id != excludeId }.map { it.pinyin }.shuffled().take(limit)
+
+            // Lấy từ cần học để biết số âm tiết cần match
+            val targetVocab = vocabs.find { it.id == excludeId }
+            val targetSyllableCount = if (targetVocab != null) getSyllableCount(targetVocab) else 1
+
+            val seen = mutableSetOf(targetVocab?.pinyin?.trim()?.lowercase() ?: "")
+            val candidates = mutableListOf<String>()
+
+            // Ưu tiên: distractor cùng số âm tiết
+            vocabs.filter { it.id != excludeId }.shuffled().forEach { v ->
+                if (candidates.size >= limit) return@forEach
+                val p = v.pinyin.trim()
+                if (getSyllableCount(v) == targetSyllableCount && !seen.contains(p.lowercase())) {
+                    seen.add(p.lowercase())
+                    candidates.add(p)
+                }
+            }
+
+            // Fallback: nếu không đủ, lấy bất kỳ
+            if (candidates.size < limit) {
+                vocabs.filter { it.id != excludeId }.shuffled().forEach { v ->
+                    if (candidates.size >= limit) return@forEach
+                    val p = v.pinyin.trim()
+                    if (!seen.contains(p.lowercase())) {
+                        seen.add(p.lowercase())
+                        candidates.add(p)
+                    }
+                }
+            }
+
+            candidates
         } catch (e: Exception) {
             Log.e(TAG, "Error getting pinyin distractors for session: $sessionId", e)
             emptyList()
         }
+    }
+
+    /**
+     * Đếm số âm tiết của một từ vựng.
+     * Ưu tiên đếm số chữ Hán trong hanzi; nếu không có thì đếm số phần trong pinyin.
+     */
+    private fun getSyllableCount(vocab: VocabularyDto): Int {
+        // Ưu tiên: đếm chữ Hán (mỗi chữ = 1 âm tiết)
+        val cleanHanzi = vocab.hanzi.replace(Regex("[^\\u4e00-\\u9fa5]"), "")
+        if (cleanHanzi.isNotEmpty()) return cleanHanzi.length
+        // Fallback: đếm số phần pinyin (cách nhau bởi khoảng trắng hoặc dấu gạch ngang)
+        if (vocab.pinyin.isNotBlank()) {
+            return vocab.pinyin.trim().split(Regex("[\\s\\-]+")).size
+        }
+        return 1
     }
 
     suspend fun getRandomMeaningDistractors(excludeId: Int, sessionId: Int, limit: Int = 3): List<String> = withContext(Dispatchers.IO) {

@@ -284,7 +284,8 @@ private fun QuizContent(
                                     fontFamily = FontFamily.Serif
                                 )
                             }
-                            if (vocab.meaning.isNotBlank()) {
+                            // Chỉ hiện nghĩa ở bước MEANING_VALIDATION, không lộ sớm khi đang chọn pinyin
+                            if (uiState.step == QuizStep.MEANING_VALIDATION && vocab.meaning.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     "Nghĩa: ${vocab.meaning}" + (if (!vocab.wordType.isNullOrBlank()) " (${vocab.wordType})" else ""),
