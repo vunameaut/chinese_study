@@ -3,6 +3,7 @@ package vhn.dev.study_chines.audio
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.media.audiofx.LoudnessEnhancer
 import android.net.Uri
 import android.os.Build
 import android.speech.tts.TextToSpeech
@@ -326,7 +327,17 @@ class ChineseSpeechManager(
                     setVolume(finalVol, finalVol)
 
                     setOnPreparedListener { mp ->
-                        // Chỉ set playbackParams SAU KHI mp đã chuẩn bị xong
+                        // Áp dụng LoudnessEnhancer cho volume > 100% (MediaPlayer.setVolume max là 1.0f)
+                        val overPercent = (totalScale - 1f).coerceAtLeast(0f) // phần vượt trên 100%
+                        if (overPercent > 0f) {
+                            try {
+                                val enhancer = LoudnessEnhancer(mp.audioSessionId)
+                                // Mỗi 1% vượt 100 = +15 milliBels (0.15 dB), max +1500 mB (+15 dB) tại 200%
+                                val gainMb = (overPercent * 1500f).toInt().coerceIn(0, 1500)
+                                enhancer.setTargetGain(gainMb)
+                                enhancer.enabled = true
+                            } catch (_: Exception) { }
+                        }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             try {
                                 val params = mp.playbackParams

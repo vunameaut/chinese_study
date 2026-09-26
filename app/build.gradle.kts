@@ -18,8 +18,8 @@ android {
     compileSdk = 35
 
     val appVersionName = (project.findProperty("versionName") as? String)
-        ?.removePrefix("v")?.trim() ?: "2.6"
-    val appVersionCode = (project.findProperty("versionCode") as? String)?.toIntOrNull() ?: 8
+        ?.removePrefix("v")?.trim() ?: "2.7"
+    val appVersionCode = (project.findProperty("versionCode") as? String)?.toIntOrNull() ?: 9
 
     defaultConfig {
         applicationId = "vhn.dev.study_chines"
