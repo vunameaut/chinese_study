@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -151,7 +153,12 @@ class SettingsViewModel(val preferences: UserPreferences) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onNavigateBack: () -> Unit,
+    darkModeState: Int = 0,
+    onDarkModeChange: (Int) -> Unit = {}
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val soundManager = remember {
@@ -200,6 +207,63 @@ fun SettingsScreen(viewModel: SettingsViewModel, onNavigateBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            // ===== 0. GIAO DIEN (DARK MODE) =====
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                border = BorderStroke(1.dp, MucGiayColors.Hairline.copy(alpha = 0.5f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Giao di\u1ec7n",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "Ch\u1ebf \u0111\u1ed9 hi\u1ec3n th\u1ecb",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)
+                    )
+                    val darkOptions = listOf(
+                        Triple(0, "H\u1ec7 th\u1ed1ng", "\uD83D\uDCF1"),
+                        Triple(1, "S\u00e1ng", "\u2600\uFE0F"),
+                        Triple(2, "T\u1ed1i", "\uD83C\uDF19")
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        darkOptions.forEach { (mode, label, icon) ->
+                            val selected = darkModeState == mode
+                            OutlinedButton(
+                                onClick = { onDarkModeChange(mode) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (selected) MucGiayColors.SealSon else Color.Transparent,
+                                    contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                border = BorderStroke(
+                                    1.5.dp,
+                                    if (selected) MucGiayColors.SealSon else MucGiayColors.Hairline
+                                )
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(icon, fontSize = 16.sp)
+                                    Text(label, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
             // ===== 1. TỔNG ÂM LƯỢNG (MASTER) =====
             ChannelCard(
                 title = "Tổng âm lượng",
@@ -832,3 +896,5 @@ fun SoundPickerItem(
         }
     }
 }
+
+

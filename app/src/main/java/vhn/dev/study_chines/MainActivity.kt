@@ -3,9 +3,10 @@ package vhn.dev.study_chines
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -31,6 +32,7 @@ import vhn.dev.study_chines.ui.grammar.GrammarViewModel
 import vhn.dev.study_chines.ui.classifier.ClassifierScreen
 import vhn.dev.study_chines.ui.classifier.ClassifierViewModel
 import vhn.dev.study_chines.ui.theme.HanziQuizTheme
+import vhn.dev.study_chines.ui.theme.MucGiayColors
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,9 +44,29 @@ class MainActivity : ComponentActivity() {
         val repository = StudyRepository(dataSource)
 
         setContent {
-            HanziQuizTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = vhn.dev.study_chines.ui.theme.MucGiayColors.Paper) {
-                    StudyChineseApp(repository = repository, preferences = preferences)
+            val systemDark = isSystemInDarkTheme()
+            // darkMode: 0=system, 1=light, 2=dark
+            var darkModeState by remember { mutableIntStateOf(preferences.darkMode) }
+            val isDark = when (darkModeState) {
+                1 -> false
+                2 -> true
+                else -> systemDark
+            }
+
+            HanziQuizTheme(darkTheme = isDark) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = if (isDark) MucGiayColors.DarkPaper else MucGiayColors.Paper
+                ) {
+                    StudyChineseApp(
+                        repository = repository,
+                        preferences = preferences,
+                        darkModeState = darkModeState,
+                        onDarkModeChange = { mode ->
+                            preferences.darkMode = mode
+                            darkModeState = mode
+                        }
+                    )
                 }
             }
         }
@@ -52,7 +74,12 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
+fun StudyChineseApp(
+    repository: StudyRepository,
+    preferences: UserPreferences,
+    darkModeState: Int,
+    onDarkModeChange: (Int) -> Unit
+) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "home") {
@@ -82,7 +109,12 @@ fun StudyChineseApp(repository: StudyRepository, preferences: UserPreferences) {
         }
         composable("settings") {
             val vm: SettingsViewModel = viewModel(factory = vmFactory { SettingsViewModel(preferences) })
-            SettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
+            SettingsScreen(
+                viewModel = vm,
+                onNavigateBack = { navController.popBackStack() },
+                darkModeState = darkModeState,
+                onDarkModeChange = onDarkModeChange
+            )
         }
         composable(
             route = "quiz/{sessionId}",

@@ -10,7 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-// Mực & Giấy palette
+// Muc & Giay palette — Light
 private val Paper_ = Color(0xFFFAF6EF)
 private val PaperDeep_ = Color(0xFFF3EDE1)
 private val Ink_ = Color(0xFF26221C)
@@ -27,6 +27,24 @@ private val AmberTint_ = Color(0xFFF5ECD9)
 private val Slate_ = Color(0xFF5B6770)
 private val SlateTint_ = Color(0xFFEEF0F2)
 private val RedBg_ = Color(0xFFF7E5E1)
+
+// Muc & Giay palette — Dark
+private val DPaper_ = Color(0xFF18181B)
+private val DPaperDeep_ = Color(0xFF27272A)
+private val DPaperCard_ = Color(0xFF1F1F23)
+private val DInk_ = Color(0xFFF4F4F5)
+private val DInkSoft_ = Color(0xFFA1A1AA)
+private val DInkFaint_ = Color(0xFF71717A)
+private val DHairline_ = Color(0xFF3F3F46)
+private val DSealSon_ = Color(0xFFF17568)
+private val DSealDeep_ = Color(0xFFE55A4D)
+private val DJade_ = Color(0xFF34D399)
+private val DJadeFill_ = Color(0xFF10B981)
+private val DJadeTint_ = Color(0xFF0A2A1F)
+private val DAmber_ = Color(0xFFFBBF24)
+private val DAmberTint_ = Color(0xFF2D2408)
+private val DSlateTint_ = Color(0xFF1E2025)
+private val DRedBg_ = Color(0xFF2C1A18)
 
 private val LightColorScheme = lightColorScheme(
     primary = SealSon_,
@@ -59,10 +77,45 @@ private val LightColorScheme = lightColorScheme(
     surfaceTint = PaperDeep_,
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = DSealSon_,
+    onPrimary = Color.White,
+    primaryContainer = DJadeTint_,
+    onPrimaryContainer = DJade_,
+    secondary = DJade_,
+    onSecondary = Color(0xFF0A2A1F),
+    secondaryContainer = DJadeTint_,
+    onSecondaryContainer = DJade_,
+    tertiary = DAmber_,
+    onTertiary = Color(0xFF2D2408),
+    tertiaryContainer = DAmberTint_,
+    onTertiaryContainer = DAmber_,
+    background = DPaper_,
+    onBackground = DInk_,
+    surface = DPaper_,
+    onSurface = DInk_,
+    surfaceVariant = DPaperCard_,
+    onSurfaceVariant = DInkSoft_,
+    outline = DHairline_,
+    outlineVariant = DHairline_.copy(alpha = 0.5f),
+    error = DSealSon_,
+    onError = Color.White,
+    errorContainer = DRedBg_,
+    onErrorContainer = DSealDeep_,
+    inverseSurface = DInk_,
+    inverseOnSurface = DPaper_,
+    inversePrimary = DPaper_,
+    surfaceTint = DPaperDeep_,
+)
+
 @Composable
-fun HanziQuizTheme(content: @Composable () -> Unit) {
+fun HanziQuizTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     MaterialTheme(
-        colorScheme = LightColorScheme,
+        colorScheme = colorScheme,
         typography = Typography,
         content = content
     )
@@ -109,8 +162,9 @@ val Typography = Typography(
     )
 )
 
-// Helper colors for use in composables
+// Helper colors for use in composables — always resolves to correct light/dark values via MaterialTheme
 object MucGiayColors {
+    // Light palette (still available for hardcoded uses)
     val Paper = Paper_
     val PaperDeep = PaperDeep_
     val Ink = Ink_
@@ -132,4 +186,16 @@ object MucGiayColors {
     val IndigoTint = Color(0xFFEEF2FF)
     val Purple = Color(0xFF7C3AED)
     val PurpleTint = Color(0xFFF3E8FF)
+
+    // Dark palette equivalents
+    val DarkPaper = DPaper_
+    val DarkPaperDeep = DPaperDeep_
+    val DarkInk = DInk_
+    val DarkInkSoft = DInkSoft_
+    val DarkHairline = DHairline_
+    val DarkSealSon = DSealSon_
+    val DarkJade = DJade_
+    val DarkJadeTint = DJadeTint_
+    val DarkAmber = DAmber_
+    val DarkAmberTint = DAmberTint_
 }

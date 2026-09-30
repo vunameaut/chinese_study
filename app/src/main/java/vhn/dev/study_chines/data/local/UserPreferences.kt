@@ -14,6 +14,7 @@ class UserPreferences(context: Context) {
         private const val KEY_CUSTOM_CORRECT_SOUND = "custom_correct_sound"
         private const val KEY_CUSTOM_WRONG_SOUND = "custom_wrong_sound"
         private const val KEY_CUSTOM_FINISH_SOUND = "custom_finish_sound"
+        private const val KEY_DARK_MODE = "dark_mode" // 0=system, 1=light, 2=dark
 
         // Granular Audio Channels (0 - 200% Discord style)
         private const val KEY_MASTER_ENABLED = "master_enabled"
@@ -103,6 +104,11 @@ class UserPreferences(context: Context) {
         get() = sharedPreferences.getString(KEY_CUSTOM_FINISH_SOUND, null)
         set(value) = sharedPreferences.edit().putString(KEY_CUSTOM_FINISH_SOUND, value).apply()
 
+    // 0 = follow system, 1 = force light, 2 = force dark
+    var darkMode: Int
+        get() = sharedPreferences.getInt(KEY_DARK_MODE, 0)
+        set(value) = sharedPreferences.edit().putInt(KEY_DARK_MODE, value).apply()
+
     fun resetAudioDefaults() {
         sharedPreferences.edit()
             .putBoolean(KEY_MASTER_ENABLED, true)
@@ -119,3 +125,4 @@ class UserPreferences(context: Context) {
             .apply()
     }
 }
+
