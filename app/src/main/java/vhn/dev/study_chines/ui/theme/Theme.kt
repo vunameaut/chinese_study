@@ -3,15 +3,18 @@
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-// Muc & Giay palette — Light
+// Muc & Giay palette - Light
 private val Paper_ = Color(0xFFFAF6EF)
 private val PaperDeep_ = Color(0xFFF3EDE1)
 private val Ink_ = Color(0xFF26221C)
@@ -29,23 +32,133 @@ private val Slate_ = Color(0xFF5B6770)
 private val SlateTint_ = Color(0xFFEEF0F2)
 private val RedBg_ = Color(0xFFF7E5E1)
 
-// Muc & Giay palette — Dark
+// Muc & Giay palette - Dark
 private val DPaper_ = Color(0xFF18181B)
 private val DPaperDeep_ = Color(0xFF27272A)
-private val DPaperCard_ = Color(0xFF1F1F23)
+private val DPaperCard_ = Color(0xFF222226)
 private val DInk_ = Color(0xFFF4F4F5)
 private val DInkSoft_ = Color(0xFFA1A1AA)
 private val DInkFaint_ = Color(0xFF71717A)
 private val DHairline_ = Color(0xFF3F3F46)
-private val DSealSon_ = Color(0xFFF17568)
-private val DSealDeep_ = Color(0xFFE55A4D)
+private val DSealSon_ = Color(0xFFE05A4D)
+private val DSealDeep_ = Color(0xFFC73E2E)
 private val DJade_ = Color(0xFF34D399)
 private val DJadeFill_ = Color(0xFF10B981)
-private val DJadeTint_ = Color(0xFF0A2A1F)
+private val DJadeTint_ = Color(0xFF0D281E)
 private val DAmber_ = Color(0xFFFBBF24)
-private val DAmberTint_ = Color(0xFF2D2408)
+private val DAmberTint_ = Color(0xFF2D2305)
 private val DSlateTint_ = Color(0xFF1E2025)
-private val DRedBg_ = Color(0xFF2C1A18)
+private val DRedBg_ = Color(0xFF3B1815)
+
+class AppPalette(
+    val Paper: Color,
+    val PaperDeep: Color,
+    val Ink: Color,
+    val InkSoft: Color,
+    val InkFaint: Color,
+    val Hairline: Color,
+    val SealSon: Color,
+    val SealDeep: Color,
+    val Jade: Color,
+    val JadeFill: Color,
+    val JadeTint: Color,
+    val Amber: Color,
+    val AmberTint: Color,
+    val Slate: Color,
+    val SlateTint: Color,
+    val RedBg: Color,
+    val Indigo: Color,
+    val IndigoFill: Color,
+    val IndigoTint: Color,
+    val Purple: Color,
+    val PurpleTint: Color
+)
+
+val LightPalette = AppPalette(
+    Paper = Paper_,
+    PaperDeep = PaperDeep_,
+    Ink = Ink_,
+    InkSoft = InkSoft_,
+    InkFaint = InkFaint_,
+    Hairline = Hairline_,
+    SealSon = SealSon_,
+    SealDeep = SealDeep_,
+    Jade = Jade_,
+    JadeFill = JadeFill_,
+    JadeTint = JadeTint_,
+    Amber = Amber_,
+    AmberTint = AmberTint_,
+    Slate = Slate_,
+    SlateTint = SlateTint_,
+    RedBg = RedBg_,
+    Indigo = Color(0xFF4F46E5),
+    IndigoFill = Color(0xFF4338CA),
+    IndigoTint = Color(0xFFEEF2FF),
+    Purple = Color(0xFF7C3AED),
+    PurpleTint = Color(0xFFF3E8FF)
+)
+
+val DarkPalette = AppPalette(
+    Paper = DPaperCard_,
+    PaperDeep = DPaperDeep_,
+    Ink = DInk_,
+    InkSoft = DInkSoft_,
+    InkFaint = DInkFaint_,
+    Hairline = DHairline_,
+    SealSon = DSealSon_,
+    SealDeep = DSealDeep_,
+    Jade = DJade_,
+    JadeFill = DJadeFill_,
+    JadeTint = DJadeTint_,
+    Amber = DAmber_,
+    AmberTint = DAmberTint_,
+    Slate = Color(0xFF94A3B8),
+    SlateTint = DSlateTint_,
+    RedBg = DRedBg_,
+    Indigo = Color(0xFF818CF8),
+    IndigoFill = Color(0xFF6366F1),
+    IndigoTint = Color(0xFF1E1B4B),
+    Purple = Color(0xFFA78BFA),
+    PurpleTint = Color(0xFF2E1065)
+)
+
+val LocalAppPalette = compositionLocalOf { LightPalette }
+
+object MucGiayColors {
+    val Paper: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Paper
+    val PaperDeep: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.PaperDeep
+    val Ink: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Ink
+    val InkSoft: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.InkSoft
+    val InkFaint: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.InkFaint
+    val Hairline: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Hairline
+    val SealSon: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.SealSon
+    val SealDeep: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.SealDeep
+    val Jade: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Jade
+    val JadeFill: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.JadeFill
+    val JadeTint: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.JadeTint
+    val Amber: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Amber
+    val AmberTint: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.AmberTint
+    val Slate: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Slate
+    val SlateTint: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.SlateTint
+    val RedBg: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.RedBg
+    val Indigo: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Indigo
+    val IndigoFill: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.IndigoFill
+    val IndigoTint: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.IndigoTint
+    val Purple: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.Purple
+    val PurpleTint: Color @Composable @ReadOnlyComposable get() = LocalAppPalette.current.PurpleTint
+
+    // Constant colors if ever needed
+    val DarkPaper = DPaper_
+    val DarkPaperDeep = DPaperDeep_
+    val DarkInk = DInk_
+    val DarkInkSoft = DInkSoft_
+    val DarkHairline = DHairline_
+    val DarkSealSon = DSealSon_
+    val DarkJade = DJade_
+    val DarkJadeTint = DJadeTint_
+    val DarkAmber = DAmber_
+    val DarkAmberTint = DAmberTint_
+}
 
 private val LightColorScheme = lightColorScheme(
     primary = SealSon_,
@@ -64,7 +177,7 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Ink_,
     surface = Paper_,
     onSurface = Ink_,
-    surfaceVariant = Hairline_,
+    surfaceVariant = PaperDeep_,
     onSurfaceVariant = InkSoft_,
     outline = Hairline_,
     outlineVariant = Hairline_.copy(alpha = 0.5f),
@@ -93,9 +206,9 @@ private val DarkColorScheme = darkColorScheme(
     onTertiaryContainer = DAmber_,
     background = DPaper_,
     onBackground = DInk_,
-    surface = DPaper_,
+    surface = DPaperCard_,
     onSurface = DInk_,
-    surfaceVariant = DPaperCard_,
+    surfaceVariant = DPaperDeep_,
     onSurfaceVariant = DInkSoft_,
     outline = DHairline_,
     outlineVariant = DHairline_.copy(alpha = 0.5f),
@@ -115,11 +228,14 @@ fun HanziQuizTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val appPalette = if (darkTheme) DarkPalette else LightPalette
+    CompositionLocalProvider(LocalAppPalette provides appPalette) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
 
 val Typography = Typography(
@@ -163,48 +279,6 @@ val Typography = Typography(
     )
 )
 
-// Helper colors for use in composables — always resolves to correct light/dark values via MaterialTheme
-object MucGiayColors {
-    // Light palette (still available for hardcoded uses)
-    val Paper = Paper_
-    val PaperDeep = PaperDeep_
-    val Ink = Ink_
-    val InkSoft = InkSoft_
-    val InkFaint = InkFaint_
-    val Hairline = Hairline_
-    val SealSon = SealSon_
-    val SealDeep = SealDeep_
-    val Jade = Jade_
-    val JadeFill = JadeFill_
-    val JadeTint = JadeTint_
-    val Amber = Amber_
-    val AmberTint = AmberTint_
-    val Slate = Slate_
-    val SlateTint = SlateTint_
-    val RedBg = RedBg_
-    val Indigo = Color(0xFF4F46E5)
-    val IndigoFill = Color(0xFF4338CA)
-    val IndigoTint = Color(0xFFEEF2FF)
-    val Purple = Color(0xFF7C3AED)
-    val PurpleTint = Color(0xFFF3E8FF)
-
-    // Dark palette equivalents
-    val DarkPaper = DPaper_
-    val DarkPaperDeep = DPaperDeep_
-    val DarkInk = DInk_
-    val DarkInkSoft = DInkSoft_
-    val DarkHairline = DHairline_
-    val DarkSealSon = DSealSon_
-    val DarkJade = DJade_
-    val DarkJadeTint = DJadeTint_
-    val DarkAmber = DAmber_
-    val DarkAmberTint = DAmberTint_
-}
-
-/**
- * Composable color tokens that automatically resolve dark/light from MaterialTheme.
- * Use these in Composables instead of MucGiayColors.* for background/surface colors.
- */
 object AppColors {
     val background: Color @Composable get() = MaterialTheme.colorScheme.background
     val surface: Color @Composable get() = MaterialTheme.colorScheme.surface
@@ -222,4 +296,4 @@ object AppColors {
 
 val ColorScheme.backgroundDeep: Color
     @Composable
-    get() = if (background.luminance() < 0.5f) Color(0xFF1E2025) else Color(0xFFEDE8DF)
+    get() = if (background.luminance() < 0.5f) Color(0xFF222226) else Color(0xFFEDE8DF)
