@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package vhn.dev.study_chines.ui.classifier
 
@@ -40,6 +40,7 @@ import vhn.dev.study_chines.data.model.ClassifierCollocation
 import vhn.dev.study_chines.data.model.ClassifierPoint
 import vhn.dev.study_chines.ui.quiz.SoundManager
 import vhn.dev.study_chines.ui.theme.MucGiayColors
+import vhn.dev.study_chines.ui.theme.backgroundDeep
 
 @Composable
 fun ClassifierScreen(

@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.ui.home
+﻿package vhn.dev.study_chines.ui.home
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import vhn.dev.study_chines.data.model.ClassifierLessonItem
 import vhn.dev.study_chines.data.remote.SessionDto
 import vhn.dev.study_chines.ui.theme.MucGiayColors
+import vhn.dev.study_chines.ui.theme.backgroundDeep
 import vhn.dev.study_chines.update.AppUpdateManager
 import vhn.dev.study_chines.update.AppUpdateState
 import vhn.dev.study_chines.update.UpdateCheckResult

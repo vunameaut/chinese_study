@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
 package vhn.dev.study_chines.ui.grammar
 
@@ -45,6 +45,7 @@ import vhn.dev.study_chines.data.model.GrammarExample
 import vhn.dev.study_chines.data.model.GrammarExercise
 import vhn.dev.study_chines.data.model.GrammarPoint
 import vhn.dev.study_chines.ui.theme.MucGiayColors
+import vhn.dev.study_chines.ui.theme.backgroundDeep
 
 
 @Composable
