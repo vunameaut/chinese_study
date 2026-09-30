@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.ui.quiz
+﻿package vhn.dev.study_chines.ui.quiz
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -42,8 +42,9 @@ fun FlashCard(
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Box(Modifier.matchParentSize()) {
+                val hairlineColor = MucGiayColors.Hairline
                 Canvas(modifier = Modifier.matchParentSize()) {
-                    val gridColor = MucGiayColors.Hairline.copy(alpha = 0.4f)
+                    val gridColor = hairlineColor.copy(alpha = 0.4f)
                     drawLine(gridColor, Offset(size.width * 0.5f, 0f), Offset(size.width * 0.5f, size.height), strokeWidth = 1.dp.toPx())
                     drawLine(gridColor, Offset(0f, size.height * 0.5f), Offset(size.width, size.height * 0.5f), strokeWidth = 1.dp.toPx())
                 }
