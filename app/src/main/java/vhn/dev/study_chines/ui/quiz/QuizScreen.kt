@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.ui.quiz
+﻿package vhn.dev.study_chines.ui.quiz
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -124,6 +124,8 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
                     correct = uiState.correctCount,
                     wrong = uiState.wrongCount,
                     isRepractice = uiState.isRepractice,
+                    wrongItems = uiState.wrongItems,
+                    onSpeak = { text -> speech.speak(text) },
                     onBack = onNavigateBack
                 )
                 else -> QuizContent(uiState = uiState, viewModel = viewModel, speechManager = speech)

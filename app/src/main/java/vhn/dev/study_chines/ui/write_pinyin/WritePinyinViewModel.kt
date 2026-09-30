@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.ui.write_pinyin
+﻿package vhn.dev.study_chines.ui.write_pinyin
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,8 @@ data class WritePinyinState(
     val remainingVocabs: Int = 0,
     val correctCount: Int = 0,
     val wrongCount: Int = 0,
-    val isRepractice: Boolean = false
+    val isRepractice: Boolean = false,
+    val wrongItems: List<VocabularyDto> = emptyList()
 )
 
 class WritePinyinViewModel(
@@ -104,7 +105,9 @@ class WritePinyinViewModel(
                 }
                 if (vocabQueue.isNotEmpty()) vocabQueue.removeAt(0)
                 vocabQueue.add(v)
-                _uiState.value = _uiState.value.copy(wrongCount = _uiState.value.wrongCount + 1)
+                val currentWrongList = _uiState.value.wrongItems
+                val updatedWrongList = if (currentWrongList.none { it.id == v.id }) currentWrongList + v else currentWrongList
+                _uiState.value = _uiState.value.copy(wrongCount = _uiState.value.wrongCount + 1, wrongItems = updatedWrongList)
             }
             setupNextWord()
         }

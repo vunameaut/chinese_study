@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.ui.write_pinyin
+﻿package vhn.dev.study_chines.ui.write_pinyin
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -144,6 +144,8 @@ fun WritePinyinScreen(
                     correct = uiState.correctCount,
                     wrong = uiState.wrongCount,
                     isRepractice = uiState.isRepractice,
+                    wrongItems = uiState.wrongItems,
+                    onSpeak = { text -> speech.speak(text) },
                     onBack = onNavigateBack
                 )
                 else -> WritePinyinContent(uiState = uiState, viewModel = viewModel, speechManager = speech)

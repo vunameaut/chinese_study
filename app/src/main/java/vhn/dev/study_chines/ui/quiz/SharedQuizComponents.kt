@@ -23,6 +23,10 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import kotlin.random.Random
 import vhn.dev.study_chines.ui.theme.MucGiayColors
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.VolumeUp
+import vhn.dev.study_chines.data.remote.VocabularyDto
 
 // ===== FLASHCARD COMPONENT =====
 @Composable

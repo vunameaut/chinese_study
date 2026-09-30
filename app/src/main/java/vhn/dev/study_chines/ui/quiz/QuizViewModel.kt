@@ -1,4 +1,4 @@
-package vhn.dev.study_chines.ui.quiz
+﻿package vhn.dev.study_chines.ui.quiz
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,7 +28,8 @@ data class QuizState(
     val remainingVocabs: Int = 0,
     val correctCount: Int = 0,
     val wrongCount: Int = 0,
-    val isRepractice: Boolean = false
+    val isRepractice: Boolean = false,
+    val wrongItems: List<VocabularyDto> = emptyList()
 )
 
 class QuizViewModel(private val repository: StudyRepository, private val sessionId: Int) : ViewModel() {
@@ -101,7 +102,9 @@ class QuizViewModel(private val repository: StudyRepository, private val session
                 }
                 if (vocabQueue.isNotEmpty()) vocabQueue.removeAt(0)
                 vocabQueue.add(v)
-                _uiState.value = _uiState.value.copy(wrongCount = _uiState.value.wrongCount + 1)
+                val currentWrongList = _uiState.value.wrongItems
+                val updatedWrongList = if (currentWrongList.none { it.id == v.id }) currentWrongList + v else currentWrongList
+                _uiState.value = _uiState.value.copy(wrongCount = _uiState.value.wrongCount + 1, wrongItems = updatedWrongList)
                 setupNextFlashcard()
             }
         }
