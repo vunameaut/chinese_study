@@ -680,22 +680,24 @@ private fun GrammarPracticeView(
                         fontWeight = FontWeight.Bold,
                         color = MucGiayColors.Ink
                     )
-                    if (currentEx.pinyin.isNotBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            currentEx.pinyin,
-                            fontStyle = FontStyle.Italic,
-                            fontSize = 13.5.sp,
-                            color = MucGiayColors.Amber
-                        )
-                    }
-                    if (currentEx.meaning.isNotBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            currentEx.meaning,
-                            fontSize = 13.5.sp,
-                            color = MucGiayColors.InkSoft
-                        )
+                    if (uiState.isAnswered) {
+                        if (currentEx.pinyin.isNotBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                currentEx.pinyin,
+                                fontStyle = FontStyle.Italic,
+                                fontSize = 13.5.sp,
+                                color = MucGiayColors.Amber
+                            )
+                        }
+                        if (currentEx.meaning.isNotBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                currentEx.meaning,
+                                fontSize = 13.5.sp,
+                                color = MucGiayColors.InkSoft
+                            )
+                        }
                     }
                 }
             }

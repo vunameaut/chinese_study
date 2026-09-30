@@ -569,6 +569,7 @@ private fun ClassifierPracticeTab(
                         Text("🔊", fontSize = 18.sp)
                     }
                 }
+                if (uiState.isAnswered) {
                 if (currentEx.pinyin.isNotBlank()) {
                     Spacer(Modifier.height(4.dp))
                     Text(currentEx.pinyin, fontSize = 13.sp, color = MucGiayColors.InkFaint)
@@ -576,6 +577,7 @@ private fun ClassifierPracticeTab(
                 if (currentEx.meaning.isNotBlank()) {
                     Spacer(Modifier.height(4.dp))
                     Text(currentEx.meaning, fontSize = 13.sp, color = MucGiayColors.InkSoft)
+                }
                 }
             }
         }
