@@ -1,10 +1,9 @@
-package vhn.dev.study_chines.ui.theme
+﻿package vhn.dev.study_chines.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -220,3 +219,7 @@ object AppColors {
     val tertiary: Color @Composable get() = MaterialTheme.colorScheme.tertiary
     val isDark: Boolean @Composable get() = MaterialTheme.colorScheme.background.luminance() < 0.5f
 }
+
+val ColorScheme.backgroundDeep: Color
+    @Composable
+    get() = if (background.luminance() < 0.5f) Color(0xFF1E2025) else Color(0xFFEDE8DF)
