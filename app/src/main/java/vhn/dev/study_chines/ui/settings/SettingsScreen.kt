@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -182,7 +183,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        containerColor = MucGiayColors.Paper,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Cài đặt âm thanh", color = MucGiayColors.Ink, fontWeight = FontWeight.Bold) },
@@ -196,7 +197,7 @@ fun SettingsScreen(
                         Text("Mặc định", color = MucGiayColors.SealSon, fontWeight = FontWeight.SemiBold)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MucGiayColors.Paper)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
@@ -896,5 +897,6 @@ fun SoundPickerItem(
         }
     }
 }
+
 
 

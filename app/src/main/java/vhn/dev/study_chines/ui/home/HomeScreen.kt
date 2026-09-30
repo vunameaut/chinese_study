@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
@@ -81,8 +82,8 @@ fun HomeScreen(
     val filteredSessions = uiState.sessions.filter { it.hskLevel == uiState.selectedHsk }
 
     Scaffold(
-        containerColor = MucGiayColors.Paper,
-        contentColor = MucGiayColors.Ink,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             TopAppBar(
                 title = { },
@@ -282,7 +283,7 @@ fun HomeScreen(
             PullToRefreshContainer(
                 state = pullToRefreshState,
                 modifier = Modifier.align(Alignment.TopCenter),
-                containerColor = MucGiayColors.Paper,
+                containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MucGiayColors.SealSon
             )
         }
@@ -399,7 +400,7 @@ private fun SessionCard(
             .fillMaxWidth()
             .border(1.dp, MucGiayColors.Hairline, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.backgroundDeep),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -603,7 +604,7 @@ private fun ClassifierLessonCard(
             .fillMaxWidth()
             .border(1.2.dp, MucGiayColors.Amber.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.backgroundDeep),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -703,3 +704,4 @@ private fun ClassifierLessonCard(
         }
     }
 }
+

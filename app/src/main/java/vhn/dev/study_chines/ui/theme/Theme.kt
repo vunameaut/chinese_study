@@ -1,6 +1,8 @@
 package vhn.dev.study_chines.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -198,4 +200,23 @@ object MucGiayColors {
     val DarkJadeTint = DJadeTint_
     val DarkAmber = DAmber_
     val DarkAmberTint = DAmberTint_
+}
+
+/**
+ * Composable color tokens that automatically resolve dark/light from MaterialTheme.
+ * Use these in Composables instead of MucGiayColors.* for background/surface colors.
+ */
+object AppColors {
+    val background: Color @Composable get() = MaterialTheme.colorScheme.background
+    val surface: Color @Composable get() = MaterialTheme.colorScheme.surface
+    val surfaceVariant: Color @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+    val onBackground: Color @Composable get() = MaterialTheme.colorScheme.onBackground
+    val onSurface: Color @Composable get() = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariant: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+    val outline: Color @Composable get() = MaterialTheme.colorScheme.outline
+    val primary: Color @Composable get() = MaterialTheme.colorScheme.primary
+    val onPrimary: Color @Composable get() = MaterialTheme.colorScheme.onPrimary
+    val secondary: Color @Composable get() = MaterialTheme.colorScheme.secondary
+    val tertiary: Color @Composable get() = MaterialTheme.colorScheme.tertiary
+    val isDark: Boolean @Composable get() = MaterialTheme.colorScheme.background.luminance() < 0.5f
 }

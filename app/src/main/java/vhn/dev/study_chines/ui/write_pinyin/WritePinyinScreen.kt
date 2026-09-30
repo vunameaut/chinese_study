@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -114,8 +115,8 @@ fun WritePinyinScreen(
     }
 
     Scaffold(
-        containerColor = MucGiayColors.Paper,
-        contentColor = MucGiayColors.Ink,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             TopAppBar(
                 title = { },
@@ -486,3 +487,4 @@ private fun WritePinyinContent(
         Spacer(Modifier.height(32.dp))
     }
 }
+

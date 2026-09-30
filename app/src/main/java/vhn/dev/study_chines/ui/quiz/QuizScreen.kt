@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -100,8 +101,8 @@ fun QuizScreen(viewModel: QuizViewModel, preferences: UserPreferences, onNavigat
     }
 
     Scaffold(
-        containerColor = MucGiayColors.Paper,
-        contentColor = MucGiayColors.Ink,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             TopAppBar(
                 title = { },
@@ -427,3 +428,4 @@ private fun OptionRow(ordinal: Char, text: String, enabled: Boolean, state: Opti
     }
     HorizontalDivider(color = MucGiayColors.Hairline, thickness = 0.5.dp)
 }
+

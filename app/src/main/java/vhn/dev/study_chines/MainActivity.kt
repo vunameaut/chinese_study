@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
             HanziQuizTheme(darkTheme = isDark) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = if (isDark) MucGiayColors.DarkPaper else MucGiayColors.Paper
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     StudyChineseApp(
                         repository = repository,
@@ -161,3 +161,4 @@ private fun vmFactory(create: () -> ViewModel) = object : ViewModelProvider.Fact
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = create() as T
 }
+

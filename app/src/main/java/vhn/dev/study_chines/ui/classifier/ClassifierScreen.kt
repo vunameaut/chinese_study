@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +61,7 @@ fun ClassifierScreen(
     var showLessonDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = MucGiayColors.Paper,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -103,7 +104,7 @@ fun ClassifierScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MucGiayColors.Paper)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
@@ -115,7 +116,7 @@ fun ClassifierScreen(
             // Tab Selector: Thẻ học & Cụm từ vs Luyện tập
             TabRow(
                 selectedTabIndex = uiState.selectedTab,
-                containerColor = MucGiayColors.PaperDeep,
+                containerColor = MaterialTheme.colorScheme.backgroundDeep,
                 contentColor = MucGiayColors.Amber
             ) {
                 Tab(
@@ -242,7 +243,7 @@ fun ClassifierScreen(
                     Text("Đóng", color = MucGiayColors.Amber)
                 }
             },
-            containerColor = MucGiayColors.Paper
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 }
@@ -280,7 +281,7 @@ private fun ClassifierDetailCard(
             .fillMaxWidth()
             .border(1.2.dp, MucGiayColors.Amber.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.backgroundDeep)
     ) {
         Column(Modifier.padding(16.dp)) {
             // Header: Big character in Hanzi grid box + Pinyin + Audio + Meaning
@@ -545,7 +546,7 @@ private fun ClassifierPracticeTab(
                 .fillMaxWidth()
                 .border(1.dp, MucGiayColors.Hairline, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MucGiayColors.PaperDeep)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.backgroundDeep)
         ) {
             Column(Modifier.padding(16.dp)) {
                 Row(
@@ -693,3 +694,4 @@ private fun ClassifierPracticeTab(
         }
     }
 }
+
